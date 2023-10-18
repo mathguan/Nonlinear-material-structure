@@ -1,0 +1,77 @@
+mesh Th = square(80, 10, [8*x, y]);
+real E = 1.0e6, nu = 0.3;
+macro strain(u, v)  [dx(u), dy(v), dy(u) + dx(v)]       //
+macro C(E, nu)    [[E/(1-nu^2),    E*nu/(1-nu^2), 0],
+                   [E*nu/(1-nu^2), E/(1-nu^2),    0],
+                   [0,             0,             E/(2*(1+nu))]] //
+plot(Th, wait=1);
+fespace Vh(Th, P2);
+Vh u, v, uu, vv;
+func g2 = -100;
+solve elascticity([u, v], [uu, vv])
+     = int2d(Th)(strain(u, v)'*C(E, nu)*strain(uu, vv))
+      -int1d(Th, 2)(g2*vv)
+      +on(4, u=0, v=0);
+
+real coef = 10.0;
+mesh Th2 = movemesh(Th, [x + coef*u, y + coef*v]);
+plot(Th2, wait=1);
+plot([u, v], wait=1);
+Vh ex = dx(u);
+Vh ey = dy(v);
+Vh exy = dx(v) + dy(u);
+
+Vh Tx = E/(1-nu^2)*(ex + nu*ey);
+plot(Tx, cmm="The stress x", wait=1, value=1);
+
+Vh Ty = E/(1-nu^2)*(ex*nu + ey);
+plot(Ty, cmm="The stress y", wait=1, value=1);
+
+Vh Txy = E/(2*(1+nu))*exy;
+plot(Txy, cmm="The stress xy", wait=1,  value=1);
+// 
+//      ofstream ofTecPlot("DemoPossion.dat");
+//      ofTecPlot << "title = \"DemoPossion\" "<< endl;
+//      ofTecPlot << "variables=\"x\",\"y\", \"u\", \"v\", \"ex\", \"ey\", \"exy\", \"Tx\", \"Ty\", \"Txy\""<< endl;
+//      ofTecPlot << "zone NODES=" << Th.nv <<", ELEMENTS=" << Th.nt << ", DATAPACKING=POINT, ZONETYPE=FETRIANGLE"<< endl;
+//      for(int i = 0; i < Th.nv; i++)
+//      {
+// 	     ofTecPlot << Th(i).x << "  " << Th(i).y << "  "
+// 	               << u[][i] << "  "
+// 	               << v[][i] << "  "
+// 	               << ex[][i] << "  "
+// 	               << ey[][i] << "  "
+// 	               << exy[][i] << "  "
+// 	               << Tx[][i] << "  "
+// 	               << Ty[][i] << "  "
+// 	               << Txy[][i] << "  " << endl;
+// 	 }
+// 	 for(int i = 0; i < Th.nt; i++)
+//      {
+// 	     ofTecPlot << Th[i][0]+1 << "  " 
+// 	               << Th[i][1]+1 << "  "
+// 	               << Th[i][2]+1 << endl;
+// 	 }
+	 
+//      ofstream ofTecPlot("Elasticity2.dat");
+//      ofTecPlot << "title = \"DemoPossion\" "<< endl;
+//      ofTecPlot << "variables=\"x\",\"y\", \"u\", \"v\", \"ex\", \"ey\", \"exy\", \"Tx\", \"Ty\", \"Txy\""<< endl;
+//      ofTecPlot << "zone NODES=" << Th.nv <<", ELEMENTS=" << Th.nt << ", DATAPACKING=POINT, ZONETYPE=FETRIANGLE"<< endl;
+//      for(int i = 0; i < Th.nv; i++)
+//      {
+// 	     ofTecPlot << Th2(i).x << "  " << Th2(i).y << "  "
+// 	               << u[][i] << "  "
+// 	               << v[][i] << "  "
+// 	               << ex[][i] << "  "
+// 	               << ey[][i] << "  "
+// 	               << exy[][i] << "  "
+// 	               << Tx[][i] << "  "
+// 	               << Ty[][i] << "  "
+// 	               << Txy[][i] << "  " << endl;
+// 	 }
+// 	 for(int i = 0; i < Th.nt; i++)
+//      {
+// 	     ofTecPlot << Th[i][0]+1 << "  " 
+// 	               << Th[i][1]+1 << "  "
+// 	               << Th[i][2]+1 << endl;
+// 	 }

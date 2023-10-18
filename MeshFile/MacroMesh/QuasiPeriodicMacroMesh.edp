@@ -1,0 +1,68 @@
+//QuasiPeriodicMacroMesh.edp
+//具有局部周期结构的网格
+
+include "../MeshFunc2D.edp"
+int n = 8;
+real[int, int] radiusR(n, n);
+int c = time();
+randinit(c);
+int nGrid = 20;
+
+mesh[int] subMesh(n);
+int[int] L1 = [2, 0], L2 = [4, 0];
+
+for(int i = 0; i < n; i++)
+{
+	radiusR(i, 0) = 0.3*randreal1() + 0.1;
+	mesh Th0 = CEllipse(0.5, 0.5, radiusR(i, 0), radiusR(i, 0), nGrid, 0);
+	Th0 = movemesh(Th0, [x, y + i]);
+	subMesh[i] = Th0;
+}
+
+for(int i = 0; i < n; i++)
+{
+	for(int j = 1; j < n; j++)
+	{
+		radiusR(i, j) = 0.3*randreal1() + 0.1;
+		mesh Th0 = CEllipse(0.5, 0.5, radiusR(i, j), radiusR(i, j), nGrid, 0);
+		Th0 = movemesh(Th0, [x + j, y + i]);
+		subMesh[i] = change(subMesh[i], label = L1);
+		Th0 = change(Th0, label = L2);
+		subMesh[i] = subMesh[i] + Th0;
+	}
+}
+mesh FinalMesh = subMesh[0];
+L1[0] = 3;L2[0] = 1;
+for(int i = 1; i < n; i++)
+{
+	FinalMesh = change(FinalMesh, label=L1);
+	subMesh[i] = change(subMesh[i], label=L2);
+	FinalMesh = FinalMesh + subMesh[i];
+}
+
+
+plot(FinalMesh, wait=1);
+//mesh BasicTh = CEllipse(0.5, 0.5, 0.3, 0.3,100, 0);
+//
+//mesh Th0 = BasicTh;
+//
+//
+//    
+//for(int i = 1; i < n; i++)
+//{
+//	mesh Th1 = movemesh(BasicTh, [x+i*thWidth, y]);
+//	Th0 = change(Th0, label = L1);
+//	Th1 = change(Th1, label = L2);
+//	Th0 = Th0 +Th1;
+//}
+	 
+//	 mesh ThTemp = Th0;
+//	 L1[0] = 3;L2[0] = 1;
+//     for(int i=1; i < m; i++)
+//     {
+//		 mesh Th1 = movemesh(ThTemp, [x, y+i*thHeight]);
+//		 Th0 = change(Th0, label = L1);
+//		 Th1 = change(Th1, label = L2);
+//		 Th0 = Th0 +Th1;	
+//	}
+//    return Th0;	

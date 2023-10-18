@@ -1,0 +1,322 @@
+//Õ‚±ﬂΩÁ
+int count = 70;
+real[int] radius(count), rx(count), ry(count);
+int c = time();
+randinit(c);
+for(int i = 0; i < count; i++)
+{
+	int flag = true;
+	while(flag)
+	{
+		radius[i] = 0.2*randreal1() + 0.03;
+		rx[i] = randreal3();
+		ry[i] = randreal3();
+		if(rx[i] + radius[i] < 1 &&  
+		   rx[i] - radius[i] > 0 && 
+		   ry[i] + radius[i] < 1 && 
+		   ry[i] - radius[i] > 0)
+		{
+			int j = 0;
+			for(j = 0; j < i; j++)
+			{
+				if(radius[i] + radius[j] >= sqrt((rx[i] - rx[j])^2 + (ry[i] - ry[j])^2))
+				{
+					break;
+				}
+			}
+			if(j == i)
+			    flag = false;
+		}
+	} 
+}
+// cout << "radius: " << radius << endl;
+// cout << "rx " << rx << endl;
+// cout << "ry " << ry << endl;
+
+border C1(t=0, 1) {x=t; y=0;label=1;}
+border C2(t=0, 1) {x=1; y=t;label=2;}
+border C3(t=0, 1) {x=(1-t); y=1;label=3;}
+border C4(t=0, 1) {x=0; y=1-t;label=4;}
+border Circle0(t=0, 2*pi){x = rx[0] + radius[0]*cos(t); y = ry[0] + radius[0]*sin(t);}
+border Circle1(t=0, 2*pi){x = rx[1] + radius[1]*cos(t); y = ry[1] + radius[1]*sin(t);}
+border Circle2(t=0, 2*pi){x = rx[2] + radius[2]*cos(t); y = ry[2] + radius[2]*sin(t);}
+border Circle3(t=0, 2*pi){x = rx[3] + radius[3]*cos(t); y = ry[3] + radius[3]*sin(t);}
+border Circle4(t=0, 2*pi){x = rx[4] + radius[4]*cos(t); y = ry[4] + radius[4]*sin(t);}
+border Circle5(t=0, 2*pi){x = rx[5] + radius[5]*cos(t); y = ry[5] + radius[5]*sin(t);}
+border Circle6(t=0, 2*pi){x = rx[6] + radius[6]*cos(t); y = ry[6] + radius[6]*sin(t);}
+border Circle7(t=0, 2*pi){x = rx[7] + radius[7]*cos(t); y = ry[7] + radius[7]*sin(t);}
+border Circle8(t=0, 2*pi){x = rx[8] + radius[8]*cos(t); y = ry[8] + radius[8]*sin(t);}
+border Circle9(t=0, 2*pi){x = rx[9] + radius[9]*cos(t); y = ry[9] + radius[9]*sin(t);}
+border Circle10(t=0, 2*pi){x = rx[10] + radius[10]*cos(t); y = ry[10] + radius[10]*sin(t);}
+border Circle11(t=0, 2*pi){x = rx[11] + radius[11]*cos(t); y = ry[11] + radius[11]*sin(t);}
+border Circle12(t=0, 2*pi){x = rx[12] + radius[12]*cos(t); y = ry[12] + radius[12]*sin(t);}
+border Circle13(t=0, 2*pi){x = rx[13] + radius[13]*cos(t); y = ry[13] + radius[13]*sin(t);}
+border Circle14(t=0, 2*pi){x = rx[14] + radius[14]*cos(t); y = ry[14] + radius[14]*sin(t);}
+border Circle15(t=0, 2*pi){x = rx[15] + radius[15]*cos(t); y = ry[15] + radius[15]*sin(t);}
+border Circle16(t=0, 2*pi){x = rx[16] + radius[16]*cos(t); y = ry[16] + radius[16]*sin(t);}
+border Circle17(t=0, 2*pi){x = rx[17] + radius[17]*cos(t); y = ry[17] + radius[17]*sin(t);}
+border Circle18(t=0, 2*pi){x = rx[18] + radius[18]*cos(t); y = ry[18] + radius[18]*sin(t);}
+border Circle19(t=0, 2*pi){x = rx[19] + radius[19]*cos(t); y = ry[19] + radius[19]*sin(t);}
+
+border Circle20(t=0, 2*pi){x = rx[20] + radius[20]*cos(t); y = ry[20] + radius[20]*sin(t);}
+border Circle21(t=0, 2*pi){x = rx[21] + radius[21]*cos(t); y = ry[21] + radius[21]*sin(t);}
+border Circle22(t=0, 2*pi){x = rx[22] + radius[22]*cos(t); y = ry[22] + radius[22]*sin(t);}
+border Circle23(t=0, 2*pi){x = rx[23] + radius[23]*cos(t); y = ry[23] + radius[23]*sin(t);}
+border Circle24(t=0, 2*pi){x = rx[24] + radius[24]*cos(t); y = ry[24] + radius[24]*sin(t);}
+border Circle25(t=0, 2*pi){x = rx[25] + radius[25]*cos(t); y = ry[25] + radius[25]*sin(t);}
+border Circle26(t=0, 2*pi){x = rx[26] + radius[26]*cos(t); y = ry[26] + radius[26]*sin(t);}
+border Circle27(t=0, 2*pi){x = rx[27] + radius[27]*cos(t); y = ry[27] + radius[27]*sin(t);}
+border Circle28(t=0, 2*pi){x = rx[28] + radius[28]*cos(t); y = ry[28] + radius[28]*sin(t);}
+border Circle29(t=0, 2*pi){x = rx[29] + radius[29]*cos(t); y = ry[29] + radius[29]*sin(t);}
+
+border Circle30(t=0, 2*pi){x = rx[30] + radius[30]*cos(t); y = ry[30] + radius[30]*sin(t);}
+border Circle31(t=0, 2*pi){x = rx[31] + radius[31]*cos(t); y = ry[31] + radius[31]*sin(t);}
+border Circle32(t=0, 2*pi){x = rx[32] + radius[32]*cos(t); y = ry[32] + radius[32]*sin(t);}
+border Circle33(t=0, 2*pi){x = rx[33] + radius[33]*cos(t); y = ry[33] + radius[33]*sin(t);}
+border Circle34(t=0, 2*pi){x = rx[34] + radius[34]*cos(t); y = ry[34] + radius[34]*sin(t);}
+border Circle35(t=0, 2*pi){x = rx[35] + radius[35]*cos(t); y = ry[35] + radius[35]*sin(t);}
+border Circle36(t=0, 2*pi){x = rx[36] + radius[36]*cos(t); y = ry[36] + radius[36]*sin(t);}
+border Circle37(t=0, 2*pi){x = rx[37] + radius[37]*cos(t); y = ry[37] + radius[37]*sin(t);}
+border Circle38(t=0, 2*pi){x = rx[38] + radius[38]*cos(t); y = ry[38] + radius[38]*sin(t);}
+border Circle39(t=0, 2*pi){x = rx[39] + radius[39]*cos(t); y = ry[39] + radius[39]*sin(t);}
+
+border Circle40(t=0, 2*pi){x = rx[40] + radius[40]*cos(t); y = ry[40] + radius[40]*sin(t);}
+border Circle41(t=0, 2*pi){x = rx[41] + radius[41]*cos(t); y = ry[41] + radius[41]*sin(t);}
+border Circle42(t=0, 2*pi){x = rx[42] + radius[42]*cos(t); y = ry[42] + radius[42]*sin(t);}
+border Circle43(t=0, 2*pi){x = rx[43] + radius[43]*cos(t); y = ry[43] + radius[43]*sin(t);}
+border Circle44(t=0, 2*pi){x = rx[44] + radius[44]*cos(t); y = ry[44] + radius[44]*sin(t);}
+border Circle45(t=0, 2*pi){x = rx[45] + radius[45]*cos(t); y = ry[45] + radius[45]*sin(t);}
+border Circle46(t=0, 2*pi){x = rx[46] + radius[46]*cos(t); y = ry[46] + radius[46]*sin(t);}
+border Circle47(t=0, 2*pi){x = rx[47] + radius[47]*cos(t); y = ry[47] + radius[47]*sin(t);}
+border Circle48(t=0, 2*pi){x = rx[48] + radius[48]*cos(t); y = ry[48] + radius[48]*sin(t);}
+border Circle49(t=0, 2*pi){x = rx[49] + radius[49]*cos(t); y = ry[49] + radius[49]*sin(t);}
+
+border Circle50(t=0, 2*pi){x = rx[50] + radius[50]*cos(t); y = ry[50] + radius[50]*sin(t);}
+border Circle51(t=0, 2*pi){x = rx[51] + radius[51]*cos(t); y = ry[51] + radius[51]*sin(t);}
+border Circle52(t=0, 2*pi){x = rx[52] + radius[52]*cos(t); y = ry[52] + radius[52]*sin(t);}
+border Circle53(t=0, 2*pi){x = rx[53] + radius[53]*cos(t); y = ry[53] + radius[53]*sin(t);}
+border Circle54(t=0, 2*pi){x = rx[54] + radius[54]*cos(t); y = ry[54] + radius[54]*sin(t);}
+border Circle55(t=0, 2*pi){x = rx[55] + radius[55]*cos(t); y = ry[55] + radius[55]*sin(t);}
+border Circle56(t=0, 2*pi){x = rx[56] + radius[56]*cos(t); y = ry[56] + radius[56]*sin(t);}
+border Circle57(t=0, 2*pi){x = rx[57] + radius[57]*cos(t); y = ry[57] + radius[57]*sin(t);}
+border Circle58(t=0, 2*pi){x = rx[58] + radius[58]*cos(t); y = ry[58] + radius[58]*sin(t);}
+border Circle59(t=0, 2*pi){x = rx[59] + radius[59]*cos(t); y = ry[59] + radius[59]*sin(t);}
+
+border Circle60(t=0, 2*pi){x = rx[60] + radius[60]*cos(t); y = ry[60] + radius[60]*sin(t);}
+border Circle61(t=0, 2*pi){x = rx[61] + radius[61]*cos(t); y = ry[61] + radius[61]*sin(t);}
+border Circle62(t=0, 2*pi){x = rx[62] + radius[62]*cos(t); y = ry[62] + radius[62]*sin(t);}
+border Circle63(t=0, 2*pi){x = rx[63] + radius[63]*cos(t); y = ry[63] + radius[63]*sin(t);}
+border Circle64(t=0, 2*pi){x = rx[64] + radius[64]*cos(t); y = ry[64] + radius[64]*sin(t);}
+border Circle65(t=0, 2*pi){x = rx[65] + radius[65]*cos(t); y = ry[65] + radius[65]*sin(t);}
+border Circle66(t=0, 2*pi){x = rx[66] + radius[66]*cos(t); y = ry[66] + radius[66]*sin(t);}
+border Circle67(t=0, 2*pi){x = rx[67] + radius[67]*cos(t); y = ry[67] + radius[67]*sin(t);}
+border Circle68(t=0, 2*pi){x = rx[68] + radius[68]*cos(t); y = ry[68] + radius[68]*sin(t);}
+border Circle69(t=0, 2*pi){x = rx[69] + radius[69]*cos(t); y = ry[69] + radius[69]*sin(t);}
+
+bool isHole = 0;
+int ngrid0 = 100;
+real[int] ngrid2(70);// = -40;
+for(int i = 0; i < 70; i++)
+{
+	int nG = 2*pi*radius[i]*ngrid0;
+	ngrid2[i] = isHole?-nG:nG;
+}
+// plot(C1(ngrid0) + C2(ngrid0) + C3(ngrid0) + C4(ngrid0)
+//      +Circle0(ngrid2)
+//      +Circle1(ngrid2)
+//      +Circle2(ngrid2)
+//      +Circle3(ngrid2)
+//      +Circle4(ngrid2)
+//      +Circle5(ngrid2)
+//      +Circle6(ngrid2)
+//      +Circle7(ngrid2)
+//      +Circle8(ngrid2)
+//      +Circle9(ngrid2)
+// );
+mesh Th = buildmesh(C1(ngrid0) + C2(ngrid0) + C3(ngrid0) + C4(ngrid0)
+     +Circle0(ngrid2[0])
+     +Circle1(ngrid2[1])
+     +Circle2(ngrid2[2])
+     +Circle3(ngrid2[3])
+     +Circle4(ngrid2[4])
+     +Circle5(ngrid2[5])
+     +Circle6(ngrid2[6])
+     +Circle7(ngrid2[7])
+     +Circle8(ngrid2[8])
+     +Circle9(ngrid2[9])
+
+     +Circle10(ngrid2[10])
+     +Circle11(ngrid2[11])
+     +Circle12(ngrid2[12])
+     +Circle13(ngrid2[13])
+     +Circle14(ngrid2[14])
+     +Circle15(ngrid2[15])
+     +Circle16(ngrid2[16])
+     +Circle17(ngrid2[17])
+     +Circle18(ngrid2[18])
+     +Circle19(ngrid2[19])
+     
+     +Circle20(ngrid2[20])
+     +Circle21(ngrid2[21])
+     +Circle22(ngrid2[22])
+     +Circle23(ngrid2[23])
+     +Circle24(ngrid2[24])
+     +Circle25(ngrid2[25])
+     +Circle26(ngrid2[26])
+     +Circle27(ngrid2[27])
+     +Circle28(ngrid2[28])
+     +Circle29(ngrid2[29])
+     
+     +Circle30(ngrid2[30])
+     +Circle31(ngrid2[31])
+     +Circle32(ngrid2[32])
+     +Circle33(ngrid2[33])
+     +Circle34(ngrid2[34])
+     +Circle35(ngrid2[35])
+     +Circle36(ngrid2[36])
+     +Circle37(ngrid2[37])
+     +Circle38(ngrid2[38])
+     +Circle39(ngrid2[39])
+     
+     +Circle40(ngrid2[40])
+     +Circle41(ngrid2[41])
+     +Circle42(ngrid2[42])
+     +Circle43(ngrid2[43])
+     +Circle44(ngrid2[44])
+     +Circle45(ngrid2[45])
+     +Circle46(ngrid2[46])
+     +Circle47(ngrid2[47])
+     +Circle48(ngrid2[48])
+     +Circle49(ngrid2[49])
+     
+     +Circle50(ngrid2[50])
+     +Circle51(ngrid2[51])
+     +Circle52(ngrid2[52])
+     +Circle53(ngrid2[53])
+     +Circle54(ngrid2[54])
+     +Circle55(ngrid2[55])
+     +Circle56(ngrid2[56])
+     +Circle57(ngrid2[57])
+     +Circle58(ngrid2[58])
+     +Circle59(ngrid2[59])
+     
+     +Circle60(ngrid2[60])
+     +Circle61(ngrid2[61])
+     +Circle62(ngrid2[62])
+     +Circle63(ngrid2[63])
+     +Circle64(ngrid2[64])
+     +Circle65(ngrid2[65])
+     +Circle66(ngrid2[66])
+     +Circle67(ngrid2[67])
+     +Circle68(ngrid2[68])
+     +Circle69(ngrid2[69]));
+plot(C1(ngrid0) + C2(ngrid0) + C3(ngrid0) + C4(ngrid0)
+     +Circle0(ngrid2[0])
+     +Circle1(ngrid2[1])
+     +Circle2(ngrid2[2])
+     +Circle3(ngrid2[3])
+     +Circle4(ngrid2[4])
+     +Circle5(ngrid2[5])
+     +Circle6(ngrid2[6])
+     +Circle7(ngrid2[7])
+     +Circle8(ngrid2[8])
+     +Circle9(ngrid2[9])
+
+     +Circle10(ngrid2[10])
+     +Circle11(ngrid2[11])
+     +Circle12(ngrid2[12])
+     +Circle13(ngrid2[13])
+     +Circle14(ngrid2[14])
+     +Circle15(ngrid2[15])
+     +Circle16(ngrid2[16])
+     +Circle17(ngrid2[17])
+     +Circle18(ngrid2[18])
+     +Circle19(ngrid2[19])
+     
+     +Circle20(ngrid2[20])
+     +Circle21(ngrid2[21])
+     +Circle22(ngrid2[22])
+     +Circle23(ngrid2[23])
+     +Circle24(ngrid2[24])
+     +Circle25(ngrid2[25])
+     +Circle26(ngrid2[26])
+     +Circle27(ngrid2[27])
+     +Circle28(ngrid2[28])
+     +Circle29(ngrid2[29])
+     
+     +Circle30(ngrid2[30])
+     +Circle31(ngrid2[31])
+     +Circle32(ngrid2[32])
+     +Circle33(ngrid2[33])
+     +Circle34(ngrid2[34])
+     +Circle35(ngrid2[35])
+     +Circle36(ngrid2[36])
+     +Circle37(ngrid2[37])
+     +Circle38(ngrid2[38])
+     +Circle39(ngrid2[39])
+     
+     +Circle40(ngrid2[40])
+     +Circle41(ngrid2[41])
+     +Circle42(ngrid2[42])
+     +Circle43(ngrid2[43])
+     +Circle44(ngrid2[44])
+     +Circle45(ngrid2[45])
+     +Circle46(ngrid2[46])
+     +Circle47(ngrid2[47])
+     +Circle48(ngrid2[48])
+     +Circle49(ngrid2[49])
+     
+     +Circle50(ngrid2[50])
+     +Circle51(ngrid2[51])
+     +Circle52(ngrid2[52])
+     +Circle53(ngrid2[53])
+     +Circle54(ngrid2[54])
+     +Circle55(ngrid2[55])
+     +Circle56(ngrid2[56])
+     +Circle57(ngrid2[57])
+     +Circle58(ngrid2[58])
+     +Circle59(ngrid2[59])
+     
+     +Circle60(ngrid2[60])
+     +Circle61(ngrid2[61])
+     +Circle62(ngrid2[62])
+     +Circle63(ngrid2[63])
+     +Circle64(ngrid2[64])
+     +Circle65(ngrid2[65])
+     +Circle66(ngrid2[66])
+     +Circle67(ngrid2[67])
+     +Circle68(ngrid2[68])
+     +Circle69(ngrid2[69]), wait=1);
+if (!isHole)
+{
+	int RM1 = Th(0.01, 0.01).region;
+	int[int] R1(142);
+	R1[0] = Th(0.01, 0.01).region;
+	R1[1] = 4;
+	for(int i = 0; i < 70; i++)
+	{
+		R1[2*i + 2] = Th(rx[i], ry[i]).region;
+		R1[2*i + 3] = 0;
+	}
+	Th = change(Th, region=R1);
+}
+plot(Th, wait=1);
+
+int RM1 = Th(0.01, 0.01).region;
+int RM2 = 0;
+fespace Vh(Th, P0);
+Vh a = 100*(region==RM1) + 10*(region==RM2);
+cout << int2d(Th)(a==10) << endl;
+cout << int2d(Th)(a==100) << endl;
+
+
+// fespace Vh0(Th, P0);
+// Vh0 a = 90*(region==RM1) + 10;
+// fespace Vh(Th, P1);
+// func f = 10;
+// Vh u, v;
+// solve Possion(u, v) = 
+//               int2d(Th)(a*(dx(u)*dx(v) + dy(u)*dy(v)))
+//              -int2d(Th)(f*v)
+//              +on(1, 2, 3, 4, u = 0);
+// plot(u, wait=1, fill=1, boundary=true, value=1);     

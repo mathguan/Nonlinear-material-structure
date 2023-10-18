@@ -1,0 +1,117 @@
+//MJBall.edp
+load "msh3"
+load "medit"
+load "tetgen"
+load "freeyams"
+//include "CellMeshFunc.edp"
+include "CellMeshFunc.edp"
+
+////指定网格尺寸
+//int nGrid = 10;
+//
+////球心
+//real rx = 0.0;
+//real ry = 0.0;
+//real rz = 0.0;
+//
+////球半径
+//real R = 0.2;
+//
+//mesh  ThS1 = square(nGrid, nGrid,[x*pi/2,y*pi/2]);    //[-pi/2,pi/2]x[0, pi]
+//
+////球坐标变换 
+//func f1 =cos(x)*cos(y);
+//func f2 =cos(x)*sin(y);
+//func f3 = sin(x);
+//
+////指定面编号
+//int[int] ref=[0, 10];  
+//real maxVol = (1./nGrid)^3/6;
+////构造半球面  
+//mesh3 ThS81= movemesh23(ThS1,transfo=[f1*R+rx,f2*R+ry,f3*R+rz], orientation=1, refface=ref);
+//plot(ThS81, wait=1);
+//
+//mesh ThS2 = square(nGrid, nGrid,[x*pi/2,y*pi/2+pi/2]);
+//mesh3 ThS82= movemesh23(ThS2,transfo=[f1*R+rx+1,f2*R+ry,f3*R+rz], orientation=1, refface=ref);
+//plot(ThS82, wait=1);
+//
+//mesh ThS3 = square(nGrid, nGrid,[x*pi/2,y*pi/2+pi]);
+//mesh3 ThS83= movemesh23(ThS3,transfo=[f1*R+rx+1,f2*R+ry+1,f3*R+rz], orientation=1, refface=ref);
+//plot(ThS83, wait=1);
+//
+//mesh ThS4 = square(nGrid, nGrid,[x*pi/2,y*pi/2+pi*3/2]);
+//mesh3 ThS84= movemesh23(ThS4,transfo=[f1*R+rx,f2*R+ry+1,f3*R+rz], orientation=1, refface=ref);
+//plot(ThS84, wait=1);
+//
+//mesh ThS5 = square(nGrid, nGrid,[-x*pi/2,y*pi/2]);
+//mesh3 ThS85= movemesh23(ThS5,transfo=[f1*R,f2*R+ry,f3*R+rz+1], orientation=1, refface=ref);
+//plot(ThS85, wait=1);
+//
+//mesh ThS6 = square(nGrid, nGrid,[-x*pi/2,y*pi/2+pi/2]);
+//mesh3 ThS86= movemesh23(ThS6,transfo=[f1*R+rx+1,f2*R+ry,f3*R+rz+1], orientation=1, refface=ref);
+//plot(ThS86, wait=1);
+//
+//mesh ThS7 = square(nGrid, nGrid,[-x*pi/2,y*pi/2+pi]);
+//mesh3 ThS87= movemesh23(ThS7,transfo=[f1*R+rx+1,f2*R+ry+1,f3*R+rz+1], orientation=1, refface=ref);
+//plot(ThS87, wait=1);
+//
+//mesh ThS8 = square(nGrid, nGrid,[-x*pi/2,y*pi/2+pi*3/2]);
+//mesh3 ThS88= movemesh23(ThS8,transfo=[f1*R+rx,f2*R+ry+1,f3*R+rz+1], orientation=1, refface=ref);
+//plot(ThS88, wait=1);
+//
+//
+//mesh Th = CCircleABA(0.2, 5);
+//plot(Th, wait=1);
+//int RM1 = Th(0.5, 0.5).region;
+//int RM2 = Th(0.25, 0.25).region;
+//int[int] R1 = [RM1, 0, RM2, 0];
+//Th = change(Th, region = R1);
+//plot(Th, wait=1);
+//
+//int orientation = 1;
+//mesh Thx = Th;
+//mesh Thy = Th;
+//mesh Thz = Th;
+//    
+//int[int] refx=[0,1],refX=[0,2];   //  Xmin, Ymax faces labels renumbering 
+//int[int] refy=[0,3],refY=[0,4];   //  Ymin, Ymax faces labesl renumbering 
+//int[int] refz=[0,5],refZ=[0,6];   //  Zmin, Zmax faces labels renumbering 
+//    
+//mesh3 Thx0 = movemesh23(Thx,transfo=[0,x,y],orientation=-orientation,label=refx); 
+//mesh3 Thx1 = movemesh23(Thx,transfo=[1,x,y],orientation=+orientation,label=refX);
+//mesh3 Thy0 = movemesh23(Thy,transfo=[x,0,y],orientation=+orientation,label=refy);
+//mesh3 Thy1 = movemesh23(Thy,transfo=[x,1,y],orientation=-orientation,label=refY);
+//mesh3 Thz0 = movemesh23(Thz,transfo=[x,y,0],orientation=-orientation,label=refz);
+//mesh3 Thz1 = movemesh23(Thz,transfo=[x,y,1],orientation=+orientation,label=refZ);
+//mesh3 FinalTh= Thx0+Thx1+Thy0+Thy1+Thz0+Thz1+ThS81;
+//plot(FinalTh, wait=1);
+//
+////FinalTh = freeyams(FinalTh);
+////savemesh(FinalTh, "FinalThTh.mesh");
+//plot(FinalTh, wait=1);
+//FinalTh = tetg(FinalTh);
+//plot(FinalTh, wait=1);
+
+mesh Th = square(5, 15, [0.2*x, pi*y/2]);
+mesh3 Th3 = movemesh23(Th, transfo=[x, y, 0]);
+Th3 = movemesh3(Th3, transfo=[x*cos(y), x*sin(y), z]);
+plot(Th3, wait=1);
+
+mesh Thx = CCircleHoleABA(0.2, 5);
+mesh3 Thx0 = movemesh23(Thx,transfo=[x,y, 0]);
+
+//plot(FinalTh, wait=1); 
+
+mesh  ThQ=square(15, 15,[x*pi/2,y*pi/2]);    //[-pi/2,pi/2]x[0, pi]
+
+//球坐标变换 
+func f1 =cos(x)*cos(y);
+func f2 =cos(x)*sin(y);
+func f3 = sin(x);
+
+//指定面编号
+int[int] ref=[0, 10];  
+//构造半球面  
+mesh3  ThS= movemesh23(ThQ,transfo=[f1*0.2,f2*0.2,f3*0.2]);
+mesh3 FinalTh = Th3 + ThS;
+plot(FinalTh, wait=1);

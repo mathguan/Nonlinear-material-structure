@@ -1,0 +1,972 @@
+/*
+宏观有限元计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHoleMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+       real M2x -- 
+       real M2y --
+       real M2Width --
+       real M2Height --
+*/
+func mesh MacroMeshRectangle(int n, int nGrid0, 
+                             real M2x,
+                             real M2y,
+                             real M2Width,
+                             real M2Height,
+                             int isHole)
+{
+    real epsilon = 1./n;
+    //BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+    //网格，并将其合成为新网格
+    
+    //内部孔洞位置
+
+
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+	border C11(t=0, 1) {x=M2x+M2Width*t; y=M2y;label=5;}
+	border C12(t=0, 1) {x=M2x+M2Width; y=M2y+M2Height*t;label=6;}
+	border C13(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;label=7;}
+	border C14(t=0, 1) {x=M2x; y=M2y+M2Height-M2Height*t;label=8;}
+
+	//边界上网格划分段数
+	int nGrid1 =int(nGrid0*M2Width);
+	if(isHole == true)
+	{
+		nGrid1 = -nGrid1;	
+	}
+	
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+	+C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+    return Th0;
+}
+/*
+mesh MacroTh = MacroMeshRectangle(8, 20, 0.25, 0.25, 0.5, 0.5, 1);
+plot(MacroTh, wait=1);
+*/
+// savemesh(MacroTh, "MacroHoleMeshRectangle8.msh");
+//
+/*
+宏观有限元计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：MacroMeshRectangle2(int m, int n, int nWidth, int nHeight)
+函数说明：在上生成m x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+	   int m -- 一个方向上的正方形个数
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+       real M2x -- 
+       real M2y --
+       real M2Width --
+       real M2Height --
+*/
+func mesh MacroMeshRectangle2(int m, 
+                             int n, 
+                             int nGrid0, 
+                             real M2x,
+                             real M2y,
+                             real M2Width,
+                             real M2Height,
+                             int isHole)
+{
+    //BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+    //网格，并将其合成为新网格
+    
+    //内部孔洞位置
+
+
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=1, 0) {x=t; y=1;label=3;}
+	border C04(t=1, 0) {x=0; y=t;label=4;}
+
+	//内边界
+	border C11(t=0, 1) {x=M2x+M2Width*t; y=M2y;label=5;}
+	border C12(t=0, 1) {x=M2x+M2Width; y=M2y+M2Height*t;label=6;}
+	border C13(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;label=7;}
+	border C14(t=0, 1) {x=M2x; y=M2y+M2Height-M2Height*t;label=8;}
+
+	//边界上网格划分段数
+	int nGrid1 =int(nGrid0*M2Width);
+	if(isHole == true)
+	{
+		nGrid1 = -nGrid1;	
+	}
+	//int nGrid1 =int(nGrid0*M2Width);
+	
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+	+C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+	//plot(BasicTh, wait=1);
+	//BasicTh = movemesh(BasicTh,[x, y]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < m; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+/*
+mesh MacroTh = MacroMeshRectangle2(10, 10, 10, 0.25, 0.25, 0.5, 0.5, 0);
+plot(MacroTh, ps="MacroMesh.eps", wait=1, boundary=0);
+*/
+/*
+宏观有限元计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHoleMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+       real M2x --
+       real M2y --
+       real M2Width --
+       real M2Height --
+*/
+func mesh MacroMeshCircle(int n, int nGrid0, 
+                             real rx,
+                             real ry,
+                             real radius,
+                             int isHole)
+{
+    real epsilon = 1./n;
+    //BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+    //网格，并将其合成为新网格
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	border Cycle(t=0, 2*pi) {x=rx+radius*cos(t); y=ry+radius*sin(t);label=8;}
+	
+	//边界上网格划分段数
+	int nGrid1 = 2*nGrid0;
+	
+	if (isHole == true)
+	{
+		nGrid1 = -nGrid1;	
+	}
+	
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+	+Cycle(nGrid1));
+	//plot(BasicTh, wait=1);
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+
+/*
+mesh MacroTh = MacroMeshCircle(16, 10, 0.5, 0.5, 0.5/sqrt(pi), 1);
+plot(MacroTh, wait=1);
+*/
+//savemesh(MacroTh, "MacroHoleMeshCircle32.msh");
+
+/*
+宏观有限元计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHoleMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+       real M2x --
+       real M2y --
+       real M2Width --
+       real M2Height --
+*/
+
+func mesh MacroMeshRectangleHoleCompo(int n, int nGrid0,
+									  real M1x, real M1y,
+									  real M1Width, real M1Height,
+									  real M2x, real M2y,
+									  real M2Width, real M2Height)
+{
+	real epsilon = 1./n;
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内部孔洞边界
+	border C11(t=0, 1) {x=M1x+M1Width*t;         y=M1y;label=5;}
+	border C12(t=0, 1) {x=M1x+M1Width;           y=M1y+M1Height*t;label=6;}
+	border C13(t=0, 1) {x=M1x+M1Width-M1Width*t; y=M1y+M1Height;label=7;}
+	border C14(t=0, 1) {x=M1x;                   y=M1y+M1Height-M1Height*t;label=8;}
+
+	//内边界
+	border C21(t=0, 1) {x=M2x+M2Width*t;         y=M2y;label=9;}
+	border C22(t=0, 1) {x=M2x+M2Width;           y=M2y+M2Height*t;label=10;}
+	border C23(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;label=11;}
+	border C24(t=0, 1) {x=M2x;                   y=M2y+M2Height-M2Height*t;label=12;}
+	
+	//边界上网格划分段数
+	int nGrid1 = nGrid0*M1Width*(-1);
+	int nGrid2 = nGrid0*M2Width;
+
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+    	                   +C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1)
+        	               +C21(nGrid1)+C22(nGrid1)+C23(nGrid1)+C24(nGrid1));
+    BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+    return Th0;
+}
+
+/*
+mesh MacroTh = MacroMeshRectangleHoleCompo(16, 40, 0.25, 0.25, 0.5, 0.5,
+												   0.1, 0.1, 0.8, 0.8);
+plot(MacroTh, wait=1);
+*/
+//savemesh(Th0, "RadiativeMesh.msh");
+
+
+//******************************************************************************
+
+func mesh MacroMeshCircleHoleCompo(int n, int nGrid0,
+									  real rx,
+									  real ry,
+									  real radius1,
+									  real radius2)
+{
+	real epsilon = 1./n;
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+	border Cycle1(t=0, 2*pi) {x=rx+radius1*cos(t); y=ry+radius1*sin(t);}
+	border Cycle2(t=0, 2*pi) {x=rx+radius2*cos(t); y=ry+radius2*sin(t);}
+	//边界上网格划分段数
+	int nGrid1 = nGrid0*(-2);
+	int nGrid2 = nGrid0*5./2;
+
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                        +Cycle1(nGrid1)+Cycle2(nGrid2));
+    BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+    return Th0;
+}
+
+// mesh MacroTh = MacroMeshCircleHoleCompo(8, 20, 0.5,0.5,0.2, 0.4);
+// int RMM1 = CellTh(0.001/n, 0.001/n).region;
+// int	RMM2 = CellTh(0.5/n,0.2/n).region;
+// cout << "RM1 = " << RM1 << endl;
+// cout << "RM2 = " << RM2 << endl;
+
+/*
+均匀化计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHoleMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+*/
+func mesh RadiativeHoleMesh(int n, int nGrid0, 
+                           real M2x,
+                           real M2y,
+                           real M2Width,
+                           real M2Height)
+{
+    real epsilon = 1./n;
+    //BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+    //网格，并将其合成为新网格
+    
+    //内部孔洞位置
+
+
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+	border C11(t=0, 1) {x=M2x+M2Width*t; y=M2y;label=5;}
+	border C12(t=0, 1) {x=M2x+M2Width; y=M2y+M2Height*t;label=6;}
+	border C13(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;label=7;}
+	border C14(t=0, 1) {x=M2x; y=M2y+M2Height-M2Height*t;label=8;}
+
+	//边界上网格划分段数
+	int nGrid1 = int(nGrid0*M2Width)*(-1);
+	
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+	+C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+	//plot(BasicTh, wait=1);
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    int[int] R1 = [0, 0];
+    R1[0] = BasicTh(0.01, 0.01).region;
+    for(int i = 1; i < n; i++)
+    {
+	    R1[1] = i;
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2, region=R1);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     R1.resize(n*2);
+     for(int i = 0; i < n; i++)
+     {
+	     R1[2*i] = i;
+	 }
+	 
+     for(int i=1; i < n; i++)
+     {
+	     for(int j = 0; j < n; j++)
+	     {
+		     R1[2*j+1] = n * i + j;
+		 }
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2, region=R1);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+
+/*
+mesh HomoTh = RadiativeHoleMesh(8, 20, 0.1, 0.1, 0.8, 0.8);
+plot(HomoTh, wait=1);
+*/
+//savemesh(Th0, "RadiativeMesh.msh");
+
+/*
+均匀化计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHoleMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+*/
+func mesh RadiativeHoleMesh2(int n, int nGrid0, 
+                           real M2x,
+                           real M2y,
+                           real M2Width,
+                           real M2Height)
+{
+    real epsilon = 1./n;
+    
+    
+    //内部孔洞位置
+
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+	border C11(t=0, 1) {x=M2x+M2Width*t; y=M2y;label=11;}
+	border C12(t=0, 1) {x=M2x+M2Width; y=M2y+M2Height*t;label=12;}
+	border C13(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;label=13;}
+	border C14(t=0, 1) {x=M2x; y=M2y+M2Height-M2Height*t;label=14;}
+
+	//边界上网格划分段数
+	int nGrid1 = int(nGrid0*M2Width)*(-1);
+	
+	//BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+    //网格，并将其合成为新网格
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+	+C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+	//plot(BasicTh, wait=1);
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+	
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0];
+    int[int] L2 = [4, 0,
+                  11, 0,
+                  12, 0,
+                  13, 0,
+                  14, 0];
+    int[int] R1 = [0, 0];
+    R1[0] = BasicTh(0.01, 0.01).region;
+    for(int i = 1; i < n; i++)
+    {
+	    R1[1] = i;
+	    for(int j = 1; j <= 4 ; j++)
+	    {
+		    L2[2 * j + 1] = (i + 1) * 10 + j;
+		}
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2, region=R1);
+	    //Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;
+     R1.resize(n*2);
+     L2.resize(8*n + 2);
+     L2[0] = 1;
+     L2[1] = 0;
+
+     for(int i = 1; i <= n; i++)
+     {
+	     for(int j = 1; j <= 4; j++)
+	     {
+		     L2[2 + (i-1)*8 + (j-1)*2] = i*10 + j;	
+		 }
+	 }
+     for(int i = 0; i < n; i++)
+     {
+  	     R1[2*i] = i;
+  	 }
+	 
+     for(int k = 1; k < n; k++)
+     {
+ 	     for(int j = 0; j < n; j++)
+ 	     {
+ 		     R1[2*j+1] = n * k + j;
+ 		 }
+		 for(int i = 1; i <= n; i++)
+		 {
+			 for(int j = 1; j <= 4; j++)
+			 {
+				 L2[3 + (i-1)*8 + (j-1)*2] = (i+k*n)*10 + j;	
+			 }
+		 }
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * k]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2, region=R1);
+		 //Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+/*
+mesh HomoTh = RadiativeHoleMesh2(8, 20, 0.25, 0.25, 0.5, 0.5);
+cout << "nodes : " << HomoTh.nv << endl;
+cout << "triangle: " << HomoTh.nt << endl;
+plot(HomoTh, wait=1);
+*/
+
+/*
+for(int i = 0; i < 8; i++)
+{
+	for(int j = 0; j < 8; j++)
+	{
+		cout << HomoTh((0.01 + i)/8, (0.01 + j)/8).region << " ";
+	}
+	cout << endl;
+}
+savemesh(HomoTh, "RadiativeMesh.msh");
+*/
+func mesh MacroMeshCircleABA(int n, real radius, int ngrid)
+{
+	real rx = 0.5;
+	real ry = 0.5;
+
+	border R11(t=0, radius){x = t; y=0; label = 1;}
+	border R12(t=radius, 1 - radius){x = t; y=0; label = 1;}
+	border R13(t=1 - radius, 1){x = t; y=0; label = 1;}
+
+	border R21(t=0, radius) {x=1; y=t;label=2;}
+	border R22(t=radius, 1 - radius) {x=1; y=t;label=2;}
+	border R23(t=1 - radius, 1) {x=1; y=t;label=2;}
+
+	border R31(t=0, radius) {x=(1-t); y=1;label=3;}
+	border R32(t=radius, 1 - radius) {x=(1-t); y=1;label=3;}
+	border R33(t=1 - radius, 1) {x=(1-t); y=1;label=3;}
+
+	border R41(t=0, radius) {x=0; y=1-t;label=4;}
+	border R42(t=radius, 1 - radius) {x=0; y=1-t;label=4;}
+	border R43(t=1 - radius, 1) {x=0; y=1-t;label=4;}
+
+	border Circle0(t=0, 2*pi){x=rx + radius*cos(t); y = ry + radius*sin(t); label = 0;}
+	border BCircle1(t=0, pi/2){x=radius*cos(t); y = radius*sin(t); label = 5;}
+	border BCircle2(t=pi/2, pi){x= 1 + radius*cos(t); y = radius*sin(t); label = 5;}
+	border BCircle3(t=pi, pi/2*3){x= 1 + radius*cos(t); y = 1+ radius*sin(t); label = 5;}
+	border BCircle4(t=pi/2*3, 2*pi){x= radius*cos(t); y = 1+ radius*sin(t); label = 5;}
+
+	int ngrid1 = (1 - radius)/radius*ngrid;
+	mesh BasicTh = buildmesh(R11(ngrid)+R12(ngrid1)+R13(ngrid)+R21(ngrid)+R22(ngrid1)+R23(ngrid)
+                       +R31(ngrid)+R32(ngrid1)+R33(ngrid)+R41(ngrid)+R42(ngrid1)+R43(ngrid)
+                       +Circle0(ngrid*8)
+                       +BCircle1(ngrid*2)+BCircle2(ngrid*2)+BCircle3(ngrid*2)+BCircle4(ngrid*2));
+	int regNU = BasicTh(0.5, 0.5).region;
+	int regNU0 = BasicTh(0.01, 0.01).region;
+	int[int] CHR = [regNU0, regNU];
+	BasicTh = change(BasicTh, region = CHR); 
+	CHR[0] = BasicTh(0.99, 0.01).region;
+	BasicTh = change(BasicTh, region = CHR);
+	CHR[0] = BasicTh(0.99, 0.99).region;
+	BasicTh = change(BasicTh, region = CHR);
+	CHR[0] = BasicTh(0.01, 0.99).region;
+	BasicTh = change(BasicTh, region = CHR);
+	
+	real epsilon = 1./n;
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+
+/*
+mesh MacroTh = MacroMeshCircleABA(8, 0.3, 5);
+int RM1 = MacroTh(0.5/8, 0.01/8).region;
+int RM2 = MacroTh(0.5/8, 0.5/8).region;
+cout << "RM1 = " << RM1 << endl;
+cout << "RM2 = " << RM2 << endl;
+plot(MacroTh, wait=1);
+*/
+
+func mesh MacroMeshCircleHoleABA(int n, real radius, int ngrid)
+{
+	real rx = 0.5;
+	real ry = 0.5;
+
+border R12(t=radius, 1 - radius){x = t; y=0; label = 1;}
+
+border R22(t=radius, 1 - radius) {x=1; y=t;label=2;}
+
+border R32(t=radius, 1 - radius) {x=(1-t); y=1;label=3;}
+
+border R42(t=radius, 1 - radius) {x=0; y=1-t;label=4;}
+
+
+border Circle0(t=0, 2*pi){x=rx + radius*cos(t); y = ry + radius*sin(t); label = 8;}
+border BCircle1(t=pi/2, 0){x=radius*cos(t); y = radius*sin(t); label = 8;}
+border BCircle2(t=pi, pi/2){x= 1 + radius*cos(t); y = radius*sin(t); label = 8;}
+border BCircle3(t=pi/2*3, pi){x= 1 + radius*cos(t); y = 1+ radius*sin(t); label = 8;}
+border BCircle4(t=2*pi, pi/2*3){x= radius*cos(t); y = 1+ radius*sin(t); label = 8;}
+
+int ngrid1 = (1 - radius)/radius*ngrid;
+mesh BasicTh = buildmesh(R12(ngrid1)+R22(ngrid1)
+                       +R32(ngrid1)+R42(ngrid1)
+                       +Circle0(-ngrid*8)
+                       +BCircle1(ngrid*2)+BCircle2(ngrid*2)
+                       +BCircle3(ngrid*2)+BCircle4(ngrid*2));
+    real epsilon = 1./n;
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+                       
+}
+/*
+mesh MacroTh = MacroMeshCircleHoleABA(16, 0.3, 3);
+plot(MacroTh, wait=1);
+*/
+
+func mesh MacroMeshRectangleHoleABA(int n, real L, int ngrid)
+{
+	real HL = L/2;
+
+	border R12(t=HL, 1 - HL){x = t; y=0; label = 1;}
+	border R22(t=HL, 1 - HL) {x=1; y=t;label=2;}
+	border R32(t=HL, 1 - HL) {x=(1-t); y=1;label=3;}
+	border R42(t=HL, 1 - HL) {x=0; y=1-t;label=4;}
+
+	border C01(t=0, L) {x=0.5-HL + t; y=0.5-HL;label=5;}
+	border C02(t=0, L) {x=0.5+HL;     y=0.5-HL + t;label=6;}
+	border C03(t=0, L) {x=0.5+HL-t; y=0.5+HL;label=7;}
+	border C04(t=0, L) {x=0.5-HL; y=0.5+HL-t;label=8;}
+
+	border D1(t=HL, 0) {x=HL; y=t;label=9;}
+	border D2(t=HL, 0) {x=(HL-t); y=HL;label=10;}
+
+	border D3(t=HL, 0) {x=(1-t); y=HL;label=11;}
+	border D4(t=HL, 0) {x=1-HL; y=HL-t;label=12;}
+
+	border D5(t=HL, 0) {x=1-HL; y=1-t;label=13;}
+	border D6(t=HL, 0) {x=1-HL + t; y=1-HL;label=14;}
+
+	border D7(t=HL, 0) {x=t; y=1 - HL;label=15;}
+	border D8(t=HL, 0) {x=HL; y=1 - HL + t;label=16;}
+	
+	int ngrid1 = ngrid/2;
+	int ngrid2 = (1 - L)/L*ngrid;
+	mesh BasicTh = buildmesh(R12(ngrid2)+R22(ngrid2)
+	                       +R32(ngrid2)+R42(ngrid2)
+                       +C01(-ngrid)+C02(-ngrid)+C03(-ngrid)+C04(-ngrid)
+                       +D1(ngrid1)+D2(ngrid1)+D3(ngrid1)+D4(ngrid1)
+                       +D5(ngrid1)+D6(ngrid1)+D7(ngrid1)+D8(ngrid1)); 
+	real epsilon = 1./n;
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+	return Th0;
+}
+/*
+mesh MacroTh = MacroMeshRectangleHoleABA(8, 0.4, 10);
+plot(MacroTh, wait=1);
+*/
+
+func mesh MacroMeshDiamondHoleABA(int n, real L, int ngrid)
+{
+	border C11(t=0, L) {x=0.5 + t; y=0.5 + t -L;label=8;}
+	border C12(t=L, 0) {x=0.5 + t; y=0.5 + L - t;label=8;}
+	border C13(t=0, L) {x=0.5 - t; y=0.5 + L - t;label=8;}
+	border C14(t=L, 0) {x=0.5 - t; y=0.5 + t -L;label=8;}
+
+	border R12(t=L, 1-L){x=t;y=0;label=1;}
+	border R22(t=L, 1-L){x=1;y=t;label=2;}
+	border R32(t=L, 1-L){x=(1-t); y=1;label=3;}
+	border R42(t=L, 1-L){x=0; y=1-t;label=4;}
+
+	border D11(t=0, L) {x=1-L + t; y=t;label=8;}
+	border D12(t=L, 0) {x=1-L + t; y=1 - t;label=8;}
+	border D13(t=0, L) {x=L - t; y=1 - t;label=8;}
+	border D14(t=L, 0) {x=L - t; y=t;label=8;}
+	
+	int ngrid0 = ngrid*sqrt(2);
+	int ngrid1 = (1 - 2*L)/L*ngrid;
+	mesh BasicTh = buildmesh(C11(-ngrid0)+C12(-ngrid0)+C13(-ngrid0)+C14(-ngrid0)
+	+R12(ngrid1)+R22(ngrid1)+R32(ngrid1)+R42(ngrid1)
+	+D11(ngrid0)+D12(ngrid0)+D13(ngrid0)+D14(ngrid0));
+	
+	real epsilon = 1./n;
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+	return Th0;
+}
+/*
+mesh MacroTh = MacroMeshDiamondHoleABA(8, 0.45, 20);
+plot(MacroTh, wait=1);
+*/
+
+func mesh MacroMeshHoneyComb(int n, real L, real h, int ngrid, int mgrid)
+{
+	
+border C1(t=0, L/2){x=t; y=sqrt(3)/2*L;label = 8;}
+border C2(t=L/2, L){x=t; y=-sqrt(3)*(t-L); label=8;}
+border C3(t=L, 2*L+sqrt(3)*h){x=t; y=0; label=1;}
+border C4(t=2*L+sqrt(3)*h, 5*L/2+sqrt(3)*h){x=t; y=sqrt(3)*(t-2*L-sqrt(3)*h);label=8;}
+border C5(t=5*L/2+sqrt(3)*h, 3*L+sqrt(3)*h){x=t; y=sqrt(3)/2*L;label=8;}
+
+border C6(t=sqrt(3)/2*L, sqrt(3)/2*L+h){x=3*L+sqrt(3)*h; y=t; label=2;};
+
+border C7(t=3*L+sqrt(3)*h,5*L/2+sqrt(3)*h){x=t; y=sqrt(3)/2*L+h; label=8;}
+border C8(t=5*L/2+sqrt(3)*h,2*L+sqrt(3)*h){x=t; y=-sqrt(3)*(t-5*L/2-sqrt(3)*h)+sqrt(3)/2*L+h;label=8;}
+border C9(t=2*L+sqrt(3)*h, L){x=t; y=sqrt(3)*L+h; label=3;}
+border C10(t=L,L/2){x=t; y=sqrt(3)*(t-L) + sqrt(3)*L+h;label=8;}
+border C11(t=L/2,0){x=t; y=sqrt(3)/2*L+h;label = 8;}
+
+border C12(t=sqrt(3)/2*L+h, sqrt(3)/2*L){x=0; y=t; label=4;}
+
+border H1(t=L+sqrt(3)/2*h, 2*L+sqrt(3)/2*h){x=t; y=h/2; label=10;}
+border H2(t=2*L+sqrt(3)/2*h, 5*L/2+sqrt(3)/2*h){x=t; y=sqrt(3)*(t-2*L-sqrt(3)/2*h)+h/2;label=10;}
+border H3(t=5*L/2+sqrt(3)/2*h, 2*L+sqrt(3)/2*h){x=t; y=-sqrt(3)*(x-5*L/2-sqrt(3)*h/2)+sqrt(3)/2*L+h/2; label=10;}
+border H4(t=2*L+sqrt(3)/2*h, L+sqrt(3)/2*h){x=t; y=sqrt(3)*L+h/2; label=10;}
+border H5(t=L+sqrt(3)/2*h, L/2+sqrt(3)/2*h){x=t; y=sqrt(3)*(x-L/2-sqrt(3)/2*h)+sqrt(3)/2*L+h/2;label=10;}
+border H6(t=L/2+sqrt(3)/2*h, L+sqrt(3)/2*h){x=t; y=-sqrt(3)*(x-L/2-sqrt(3)/2*h)+sqrt(3)/2*L+h/2;label=10;}
+// plot(C1(10)+C2(12)+C3(14)+C4(12)+C5(10)+C6(4)
+//     +C7(10)+C8(12)+C9(14)+C10(12)+C11(10)+C12(4)
+//     +H1(12)+H2(12)+H3(12)+H4(12)+H5(12)+H6(12));
+int ngrid1 = ngrid/2;
+int ngrid2 = ngrid*3/sqrt(3);
+mesh BasicTh=buildmesh(C1(ngrid1)+C2(ngrid)+C3(ngrid2)+C4(ngrid)+C5(ngrid1)+C6(mgrid)
+                     +C7(ngrid1)+C8(ngrid)+C9(ngrid2)+C10(ngrid)+C11(ngrid1)+C12(mgrid)
+     				 +H1(-ngrid)+H2(-ngrid)+H3(-ngrid)+H4(-ngrid)+H5(-ngrid)+H6(-ngrid));
+//plot(CellTh, wait=1);
+//    real epsilonX = 1./8*(3*L+sqrt(3)*h);
+//    real epsilonY = 1./8*(sqrt(3)*L+h);
+    real shiftX = (3*L+sqrt(3)*h);
+    real shiftY = sqrt(3)*L+h;
+//	BasicTh = movemesh(BasicTh,[x*epsilonX, y*epsilonY]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [shiftX*i+x, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	    //plot(Th0, wait=1);
+	 }	 
+ 	 mesh ThTemp = Th0;
+ 	 L1[0] = 3;L2[0] = 1;
+      for(int i=1; i < n; i++)
+      {
+		 mesh Th1 = movemesh(ThTemp, [x, y + shiftY * i]);
+ 		 Th0 = change(Th0, label = L1);
+ 		 Th1 = change(Th1, label = L2);
+ 		 Th0 = Th0 +Th1;	
+ 	}
+ 	return Th0;
+}
+
+// mesh MacroTh = MacroMeshHoneyComb(16, 1, 0.3, 10, 3);
+// plot(MacroTh, wait=1);
+
+func mesh MacroMeshRectangleHoleCircle(int n, int nGrid0, real rx, real ry, real radius, 
+                               real M2x, real M2y, real M2Width, real M2Height)
+{
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//孔洞边界
+	border Cycle(t=0, 2*pi) {x=rx+radius*cos(t); y=ry+radius*sin(t);}
+
+	//内部界面
+	border C21(t=0, 1) {x=M2x+M2Width*t;         y=M2y;}
+	border C22(t=0, 1) {x=M2x+M2Width;           y=M2y+M2Height*t;}
+	border C23(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;}
+	border C24(t=0, 1) {x=M2x;                   y=M2y+M2Height-M2Height*t;}
+
+	//边界上网格划分段数
+	int nGrid1 = 2*nGrid0;
+	int nGrid2 = -nGrid0/2;
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                        +Cycle(nGrid1)
+                        +C21(nGrid2)+C22(nGrid2)+C23(nGrid2)+C24(nGrid2));
+    real epsilon = 1./8;
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < n; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+	return Th0;
+}
+// real rx= 0.5;
+// real ry = 0.5;
+// real radius = 0.45;
+// real M2x = 0.25;
+// real M2y = 0.25;
+// real M2Width = 0.5;
+// real M2Height = 0.5;
+// int n = 8;
+// int nGrid0 = 30;
+// mesh MacroTh = MacroMeshRectangleHoleCircle( n, nGrid0, rx, ry, radius, 
+//                                M2x, M2y, M2Width, M2Height);
+// int RMM1 = MacroTh(0.001/n, 0.001/n).region;
+// int RMM2 = MacroTh(0.5/n, 0.2/n).region;
+// cout << "RMM1 = " << RMM1 << endl;
+// cout << "RMM2 = " << RMM2 << endl;
+// plot(MacroTh, wait=1); 

@@ -1,0 +1,61 @@
+func mesh RadiativeHMesh16(int nWidth, int nHeight)
+{
+    int n = 16;
+    real epsilon = 1./n;
+    mesh BasicTh = square(nWidth, nHeight, [epsilon*x, epsilon*y]);
+
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    int[int] R1 = [0, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    R1[1] = i;
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2, region=R1);
+	    Th0 = Th0 +Th1;
+	 }
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     int[int] R2 = [0,  0,
+     				1,  0, 
+               		2,  0, 
+               		3,  0, 
+               		4,  0, 
+               		5,  0, 
+               		6,  0,
+               		7,  0,
+               		8,  0,
+               		9,  0,
+               		10, 0, 
+               		11, 0,
+               		12, 0,
+               		13, 0,
+               		14, 0,
+               		15, 0];
+     for(int i=1; i < n; i++)
+     {
+	     for(int j = 0; j < n; j++)
+	     {
+		     R2[2*j+1] = n * i + j;
+		 }
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2, region=R2);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+
+mesh HomoTh = RadiativeHMesh16(10, 10);
+plot(HomoTh, wait=1);
+// for(int i = 0; i < 16; i++)
+// {
+// 	for(int j = 0; j < 16; j++)
+// 	{
+// 		cout << HomoTh((0.5+j)/16, (0.5+i)/16).region << " ";
+// 	}
+// 	cout << endl;
+// }
+//savemesh(Th0, "RadiativeMesh.msh");

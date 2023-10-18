@@ -1,0 +1,16 @@
+load "msh3"
+load "tetgen"
+include "../HomoMesh/HomoMeshFunc.edp"
+mesh Th = Rectangle2(0, 0, 2*pi, 2*pi, 1, 2, 3, 4, 50, 50);
+// plot(Th, wait=1);
+// mesh Th2 = movemesh(Th, [x + 0.2*y, y]);
+// plot(Th, Th2, wait=1);
+real radius = 0.1;
+real rx = 0;
+real ry = 0;
+real theta = pi/3;
+mesh3 Th3 = movemesh23(Th, transfo=[rx + radius*cos(x), 
+                                    ry + radius*sin(x), y/pi*0.5]);
+plot(Th3, wait=1);
+// mesh3 Th32 = movemesh3(Th3, transfo=[x, y+z/tan(theta), z]);
+// plot(Th3, Th32, wait=1);

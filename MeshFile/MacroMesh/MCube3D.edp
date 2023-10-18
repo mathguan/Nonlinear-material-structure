@@ -1,0 +1,80 @@
+load "msh3"
+load "tetgen"
+//load "medit"
+// int Mn = 8;
+// mesh3 BasicTh = readmesh3("CCubeM.mesh");
+// //plot(BasicTh, wait=1);
+// BasicTh = movemesh3(BasicTh, transfo=[1./Mn*x, 1./Mn*y, 1./Mn*z]);
+// // mesh3 Th = movemesh(BasicTh, transfo=[x+1, y, z]);
+// //plot(BasicTh, wait=1);
+// mesh3 Th0 = BasicTh;
+// int[int] L1 = [2, 0], L2 = [1, 0];
+// for(int i = 1; i < Mn; i++)
+// {
+// 	mesh3 Th1 = movemesh3(BasicTh, transfo=[x+1./Mn*i, y, z]);
+// 	Th0 = change(Th0, label = L1);
+// 	Th1 = change(Th1, label = L2);
+// 	Th0 = Th0 +Th1;
+// 	//plot(Th0, wait=1);
+// }
+// 
+// mesh3 ThTemp = Th0;
+// L1[0] = 4;L2[0] = 3;
+// for(int i=1; i < Mn; i++)
+// {
+//     mesh3 Th1 = movemesh3(ThTemp, transfo=[x, y + 1./Mn * i, z]);
+//     Th0 = change(Th0, label = L1);
+//     Th1 = change(Th1, label = L2);
+//     Th0 = Th0 +Th1;
+//     //plot(Th0, wait=1);	
+// }
+// 
+// ThTemp = Th0;
+// L1[0] = 6;L2[0] = 5;
+// for(int i=1; i < Mn; i++)
+// {
+//     mesh3 Th1 = movemesh3(ThTemp, transfo=[x, y , z+ 1./Mn * i]);
+//     Th0 = change(Th0, label = L1);
+//     Th1 = change(Th1, label = L2);
+//     Th0 = Th0 +Th1;
+//     //plot(Th0, wait=1);	
+// }
+// //medit("Th0", Th0);
+// plot(Th0, wait=1);
+// // cout << "Number of vertices = " << Th0.nv << endl;
+// // cout << "Number of Tetrahedras = " << Th0.nt << endl;
+// savemesh(Th0, "MCube3D8.mesh");
+int M1 = 1, M2 = 0.01;
+mesh3 macroTh = readmesh3("MCube3D8.mesh");
+plot(macroTh, wait=1);
+//fespace macroVh0(macroTh, P0);
+// fespace macroVh(macroTh, P1);
+// int RM1 = macroTh(0.01/8, 0.01/8, 0.01/8).region;
+// int RM2 = macroTh(0.5/8, 0.5/8, 0.5/8).region;
+// cout << "RM1 = " << RM1 << endl;
+// cout << "RM2 = " << RM2 << endl;
+/*
+cout << macroTh(0.01/8, 0.01/8, 0.01/8).region << endl;
+for(int i = 0; i < 8; i++)
+{
+	for(int j = 0; j < 8; j++)
+	{
+		for(int k = 0; k < 8; k++)
+		{
+			cout << macroTh((0.5+i)/8, (0.5+j)/8, (0.5+k)/8).region << "  ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+	cout << endl;
+}
+*/
+//macroVh0 a = M1*(region==RM1) + M2*(region == RM2);
+// macroVh T0, V0;
+// func f = 10;
+// solve Possion(T0, V0) = 
+//     int3d(macroTh, RM1)(M1*(dx(T0)*dx(V0) + dy(T0)*dy(V0) + dz(T0)*dz(V0)))
+//    +int3d(macroTh, RM2)(M2*(dx(T0)*dx(V0) + dy(T0)*dy(V0) + dz(T0)*dz(V0)))
+//    -int3d(macroTh)(f*V0)
+//    +on(1, 2, 3, 4, 5, 6, T0 = 0);
+// plot(T0, wait=1);

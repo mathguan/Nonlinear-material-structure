@@ -1,0 +1,70 @@
+//HomoMeshCube3D.edp
+load "msh3"
+load "tetgen"
+load "medit"
+mesh3 HomoTh;
+{
+// 	//边界
+// 	border C01(t=0, 1) {x=t; y=0;label=1;}
+// 	border C02(t=0, 1) {x=1; y=t;label=2;}
+// 	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+// 	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+// 
+// 	//边界上网格划分段数
+// 	int nGrid0 = 30;
+// 	mesh Th1 = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0));
+
+    mesh Th1 = square(20, 20);
+	func xx1 = x;
+	func yy1 = y;
+	func zzMin1 = 0.;
+	func zzMax1 = 1.;
+	
+	int[int] re = [0, 5];
+	mesh3 ThButtom1 = movemesh23(Th1, transfo=[xx1, yy1, zzMin1], 
+	                                  orientation=-1, label=re);
+	re(1) = 6;
+	mesh3 ThTop1 = movemesh23(Th1, transfo=[xx1, yy1, zzMax1], 
+	                               orientation=1, label=re);
+	
+
+	mesh3 Th = ThButtom1 + ThTop1;
+	//plot(Th, wait=1);
+	//medit("cube", Th);
+	func xx2 = x;
+	func yyMin1 = 0.;
+	func yyMax1 = 1.;
+	func zz2 = y;
+
+
+	re(1) = 3;
+	mesh3 ThLeft1 = movemesh23(Th1, transfo=[xx2, yyMin1, zz2],
+	                                orientation=1, label=re);
+	re(1) = 4;
+	mesh3 ThRight1 = movemesh23(Th1, transfo=[xx2, yyMax1, zz2],
+	                                orientation=-1, label=re);
+
+	Th = Th + ThLeft1 + ThRight1;
+	//medit("cube", Th);
+
+	func xxMin1 = 0.;
+	func xxMax1 = 1.;
+	func yy3 = x;
+	func zz3 = y;
+	
+	re(1) = 2;
+	mesh3 ThBack1 = movemesh23(Th1, transfo=[xxMin1, yy3, zz3],
+	                                orientation=-1, label=re);
+	re(1) = 1;
+	mesh3 ThFront1 = movemesh23(Th1, transfo=[xxMax1, yy3, zz3],
+	                                orientation = 1, label = re);
+
+	Th = Th + ThFront1 + ThBack1;
+	//plot(Th, wait=1, dim = 3);
+	
+	real[int] domain = [0.5, 0.5, 0.5, 20, 1./30];
+	HomoTh = tetg(Th, switch="paAAQYY", nbofregions=1, regionlist=domain);
+    plot(HomoTh, wait=1);
+	savemesh(HomoTh, "HomoTh3D.mesh");
+	//medit("cube", Th);
+}

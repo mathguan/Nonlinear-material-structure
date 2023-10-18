@@ -1,0 +1,138 @@
+load "msh3"
+load "tetgen"
+include "CellMeshFunc.edp";
+include "../HomoMesh/HomoMeshFunc.edp"
+real l = 0.1;
+border C1(t = 1./2 - sqrt(2)/2*l, 1./2 + sqrt(2)/2*l) {x = t; y = 0;}
+border C2(t = 1./2 + sqrt(2)/2*l, 1){x = t; y = t - (1./2 + sqrt(2)/2*l); }
+border C3(t = 1./2 - sqrt(2)/2*l, 1./2 + sqrt(2)/2*l) {x = 1; y = t;}
+border C4(t = 1, 1./2 - sqrt(2)/2*l){x = t; y = t - 1./2 + sqrt(2)/2*l; }
+
+mesh BasicXBar = buildmesh(C1(7) + C2(21) + C3(7) + C4(28));
+plot(BasicXBar, wait=1);
+mesh BasicXBar2 = Rectangle2(0, 0, (sqrt(2)/2 - l), l, 1, 2, 3, 4, 21, 5);
+//square(20, 10, [x*(sqrt(2)/2 - l), y*l]);
+//plot(BasicXBar2, wait=1);
+mesh BasicXBar3 = Rectangle2(0, 0, (sqrt(2)/2 + l), l, 1, 2, 3, 4, 28, 5);//quare(30, 10, [x*(sqrt(2)/2 + l), y*l]);
+//plot(BasicXBar3, wait=1);
+
+
+mesh3 ThFinal;
+mesh3 ThTop1 = movemesh23(BasicXBar, transfo = [x, y, 1./4 - 1./2*l]);
+mesh3 ThTop2 = movemesh23(BasicXBar, transfo = [x, y, 1./4 + 1./2*l]);
+ThFinal = ThTop1 + ThTop2;
+plot(ThFinal, wait=1);
+
+mesh3 ThTop3 = movemesh23(BasicXBar2, transfo = [sqrt(2)/2*x + 1./2 + sqrt(2)/2*l, sqrt(2)/2*x, y + 1./4 - 1./2*l]);
+mesh3 ThTop4 = movemesh23(BasicXBar3, transfo = [sqrt(2)/2*x + 1./2 - sqrt(2)/2*l, sqrt(2)/2*x, y + 1./4 - 1./2*l]);
+ThFinal = ThFinal + ThTop4 + ThTop3;
+plot(ThFinal, wait=1);
+
+//========================================================
+mesh B2Th = movemesh(BasicXBar, [y, x]);
+mesh3 Th2Top1 = movemesh23(B2Th, transfo = [x, y, 1./4 - 1./2*l]);
+mesh3 Th2Top2 = movemesh23(B2Th, transfo = [x, y, 1./4 + 1./2*l]);
+ThFinal = ThFinal + Th2Top1 + Th2Top2;
+plot(ThFinal, wait=1);
+
+mesh3 Th2Top3 = movemesh23(BasicXBar2, transfo = [sqrt(2)/2*x, sqrt(2)/2*x + 1./2 + sqrt(2)/2*l, y + 1./4 - 1./2*l]);
+mesh3 Th2Top4 = movemesh23(BasicXBar3, transfo = [sqrt(2)/2*x, sqrt(2)/2*x + 1./2 - sqrt(2)/2*l, y + 1./4 - 1./2*l]);
+ThFinal = ThFinal + Th2Top4 + Th2Top3;
+plot(ThFinal, wait=1);
+
+mesh BasicXBar4 = movemesh(BasicXBar, [1 - x, y]);
+mesh3 Th3Top1 = movemesh23(BasicXBar4, transfo = [x, y, 3./4 - 1./2*l]);
+mesh3 Th3Top2 = movemesh23(BasicXBar4, transfo = [x, y, 3./4 + 1./2*l]);
+ThFinal = ThFinal + Th3Top1 + Th3Top2;
+plot(ThFinal, wait=1);
+
+mesh3 Th3Top3 = movemesh23(BasicXBar2, transfo = [-sqrt(2)/2*x + 1./2 - sqrt(2)/2*l, sqrt(2)/2*x, y + 3./4 - 1./2*l]);
+mesh3 Th3Top4 = movemesh23(BasicXBar3, transfo = [-sqrt(2)/2*x + 1./2 + sqrt(2)/2*l, sqrt(2)/2*x, y + 3./4 - 1./2*l]);
+ThFinal = ThFinal + Th3Top3 + Th3Top4;
+plot(ThFinal, wait=1);
+
+mesh BasicXBar5 = movemesh(BasicXBar, [x, 1 - y]);
+plot(BasicXBar5, wait=1);
+mesh3 Th4Top1 = movemesh23(BasicXBar5, transfo = [x, y, 3./4 - 1./2*l]);
+mesh3 Th4Top2 = movemesh23(BasicXBar5, transfo = [x, y, 3./4 + 1./2*l]);
+ThFinal = ThFinal + Th4Top1 + Th4Top2;
+plot(ThFinal, wait=1);
+
+mesh3 Th4Top3 = movemesh23(BasicXBar2, transfo = [-sqrt(2)/2*x + 1, sqrt(2)/2*x + 1./2 + sqrt(2)/2*l, y + 3./4 - 1./2*l]);
+mesh3 Th4Top4 = movemesh23(BasicXBar3, transfo = [-sqrt(2)/2*x + 1, sqrt(2)/2*x + 1./2 - sqrt(2)/2*l, y + 3./4 - 1./2*l]);
+ThFinal = ThFinal + Th4Top3 + Th4Top4;
+plot(ThFinal, wait=1);
+
+    //外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+	
+	real originX = 0.5 - sqrt(2)/2*l;
+	real originY = 1./4 - 1./2*l;
+	real width = sqrt(2)*l;
+	real height = l;
+	//内边界1
+	border C11(t=0, 1) {x=originX+width*t;     y=originY; label = 11;}
+	border C12(t=0, 1) {x=originX+width;       y=originY+height*t;label = 12;}
+	border C13(t=0, 1) {x=originX+width*(1-t); y=originY+height;label = 13;}
+	border C14(t=0, 1) {x=originX;             y=originY+height*(1-t);label = 14;}
+	
+	real originX2 = 0.5 - sqrt(2)/2*l;
+	real originY2 = 3./4 - 1./2*l;
+	//内边界2
+	border C21(t=0, 1) {x=originX2+width*t;     y=originY2; label = 11;}
+	border C22(t=0, 1) {x=originX2+width;       y=originY2+height*t;label = 12;}
+	border C23(t=0, 1) {x=originX2+width*(1-t); y=originY2+height;label = 13;}
+	border C24(t=0, 1) {x=originX2;             y=originY2+height*(1-t);label = 14;}
+	
+mesh BasicFace = buildmesh(C01(20) + C02(20) + C03(20) + C04(20)
+                          +C11(-7) + C12(-5) + C13(-7) + C14(-5)
+                          +C21(-7) + C22(-5) + C23(-7) + C24(-5));
+mesh BasicFace1 = buildmesh(C11(7) + C12(5) + C13(7) + C14(5));
+mesh BasicFace2 = buildmesh(C21(7) + C22(5) + C23(7) + C24(5));
+mesh BasicFace3 = buildmesh(C01(20) + C02(20) + C03(20) + C04(20));
+//plot(BasicFace,wait=1);
+
+mesh3 ThFace1 = movemesh23(BasicFace, transfo = [0, x, y]);
+mesh3 ThFace11 = movemesh23(BasicFace1, transfo = [0, x, y]);
+mesh3 ThFace12 = movemesh23(BasicFace2, transfo = [0, x, y]);
+ThFinal = ThFinal + ThFace1 + ThFace11 + ThFace12;
+plot(ThFinal, wait=1);
+
+mesh3 ThFace2 = movemesh23(BasicFace, transfo = [1, x, y]);
+mesh3 ThFace21 = movemesh23(BasicFace1, transfo = [1, x, y]);
+mesh3 ThFace22 = movemesh23(BasicFace2, transfo = [1, x, y]);
+ThFinal = ThFinal + ThFace2 + ThFace21 + ThFace22;
+plot(ThFinal, wait=1);
+
+mesh3 ThFace3 = movemesh23(BasicFace, transfo = [x, 0, y]);
+mesh3 ThFace31 = movemesh23(BasicFace1, transfo = [x, 0, y]);
+mesh3 ThFace32 = movemesh23(BasicFace2, transfo = [x, 0, y]);
+ThFinal = ThFinal + ThFace3 + ThFace31 + ThFace32;
+plot(ThFinal, wait=1);
+
+mesh3 ThFace4 = movemesh23(BasicFace, transfo = [x, 1, y]);
+mesh3 ThFace41 = movemesh23(BasicFace1, transfo = [x, 1, y]);
+mesh3 ThFace42 = movemesh23(BasicFace2, transfo = [x, 1, y]);
+ThFinal = ThFinal + ThFace4 + ThFace41 + ThFace42;
+plot(ThFinal, wait=1);
+
+mesh3 ThFace5 = movemesh23(BasicFace3, transfo = [x, y, 0]);
+ThFinal = ThFinal + ThFace5;
+plot(ThFinal, wait=1);
+
+mesh3 ThFace6 = movemesh23(BasicFace3, transfo = [x, y, 1]);
+ThFinal = ThFinal + ThFace6;
+plot(ThFinal, wait=1);
+
+real[int] domain = [0.01, 0.01, 0.01, 1,  0.00005, 
+                     0.99, 0.5, 0.25, 12, 0.00005, 
+                     0.99, 0.5, 0.75, 13, 0.00005,
+                     0.5,  0.99, 0.75, 14, 0.00005, 
+                     0.01, 0.5, 0.75, 15, 0.00005];
+mesh3 CellTh = tetg(ThFinal, switch="paAAQY", nbofregions = 5, regionlist=domain);
+ plot(CellTh, wait=1);
+ 
+savemesh(CellTh, "XChuan.mesh");

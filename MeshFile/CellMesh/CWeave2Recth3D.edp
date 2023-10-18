@@ -1,0 +1,155 @@
+load "msh3"
+load "tetgen"
+load "medit"
+
+real M2x = 0.4;
+real M2y = 0.1;
+real M2Width = 0.2;
+real M2Height = 0.2;
+
+	//外边界
+border C01(t=0, 1) {x=t; y=0;label=1;}
+border C02(t=0, 1) {x=1; y=t;label=2;}
+border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+border C11(t=0, 1) {x=M2x+M2Width*t; y=M2y;}
+border C12(t=0, 1) {x=M2x+M2Width; y=M2y+M2Height*t;}
+border C13(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;}
+border C14(t=0, 1) {x=M2x; y=M2y+M2Height-M2Height*t;}
+
+int nGrid0 = 30;
+int nGrid1 = (-1)*nGrid0*M2Width;
+mesh Th0 = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                    +C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+//plot(Th1, wait=1);
+mesh Th00 = buildmesh(C11(-nGrid1)+C12(-nGrid1)+C13(-nGrid1)+C14(-nGrid1));
+plot(Th00, wait=1);
+                   
+int RM1 = Th0(0.1, 0.1).region;
+int[int] R1 = [RM1, 1];
+Th0 = change(Th0, region=R1);
+Th00 = change(Th00, region=R1);
+
+func xx1 = x;
+func yy1 = y;
+func zzMin1 = 0.;
+func zzMax1 = 1.;
+
+mesh3 ThButtom1 = movemesh23(Th0, transfo=[xx1, yy1, zzMin1]);
+mesh3 ThButtom11 = movemesh23(Th00, transfo=[xx1, yy1, zzMin1]);
+ThButtom1 = ThButtom1 + ThButtom11;
+plot(ThButtom1, wait=1);
+
+R1[0] = 1;
+R1[1] = 2;
+Th0 = change(Th0, region=R1);
+Th00 = change(Th00, region=R1);
+mesh3 ThButtom2 = movemesh23(Th0, transfo=[xx1, yy1, zzMax1]);
+mesh3 ThButtom21 = movemesh23(Th00, transfo=[xx1, yy1, zzMax1]);
+
+ThButtom1 = ThButtom1 + ThButtom2 + ThButtom21;
+
+plot(ThButtom1, wait=1);
+
+func xx2Min = 0.;
+func xx2Max = 1.;
+func yy2 = 1-y;
+func zz2 = x;
+R1[0] = 2;
+R1[1] = 3;
+Th0 = change(Th0, region=R1);
+Th00 = change(Th00, region=R1);
+
+mesh3 ThBack1 = movemesh23(Th0, transfo=[xx2Min, yy2, zz2]);
+mesh3 ThBack11 = movemesh23(Th00, transfo=[xx2Min, yy2, zz2]);
+
+ThButtom1 = ThButtom1 + ThBack1 + ThBack11;
+plot(ThButtom1,wait=1);
+
+R1[0] = 3;
+R1[1] = 4;
+Th0 = change(Th0, region=R1);
+Th00 = change(Th00, region=R1);
+mesh3 ThBack2 = movemesh23(Th0, transfo=[xx2Max, yy2, zz2]);
+mesh3 ThBack21 = movemesh23(Th00, transfo=[xx2Max, yy2, zz2]);
+
+ThButtom1 = ThButtom1 + ThBack2 + ThBack21;
+plot(ThButtom1, wait=1);
+
+mesh Th1 = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0));
+R1[0] = 0;
+R1[1] = 5;
+Th1 = change(Th1, region = R1);
+
+func xx3 = x;
+func yy3Min = 0.;
+func yy3Max = 1.;
+func zz3 = y;
+mesh3 ThLeft1 = movemesh23(Th1, transfo=[xx3, yy3Min, zz3]);
+R1[0] = 5;
+R1[1] = 6;
+Th1 = change(Th1, region = R1);
+mesh3 ThLeft2 = movemesh23(Th1, transfo=[xx3, yy3Max, zz3]);
+ThButtom1 = ThButtom1 + ThLeft1 + ThLeft2;
+plot(ThButtom1, wait=1);
+
+border C21(t=0, 1) {x=t; y=0;label=1;}
+border C22(t=0, M2Width) {x=1; y=t;label=2;}
+border C23(t=0, 1) {x=(1-t); y=M2Width;label=3;}
+border C24(t=0, M2Width) {x=0; y=M2Width-t;label=4;}
+plot(C21(nGrid0)+C22(nGrid1)+C23(nGrid0)+C24(nGrid1), wait=1);
+mesh Th2 = buildmesh(C21(nGrid0)+C22(-nGrid1)+C23(nGrid0)+C24(-nGrid1));
+plot(Th2, wait=1);
+
+func xx4Min = M2x;
+func xx4Max = M2x+M2Width;
+func yy4 = y + M2y;
+func zz4 = x;
+
+mesh3 ThL1 = movemesh23(Th2, transfo=[xx4Min, yy4, zz4]);
+mesh3 ThL2 = movemesh23(Th2, transfo=[xx4Max, yy4, zz4]);
+ThL1 = ThL1 + ThL2;
+plot(ThL1, wait=1);
+
+func xx5 = y + M2x;
+func yy5Min = M2y;
+func yy5Max = M2y+M2Height;
+func zz5 = x;
+mesh3 ThL3 = movemesh23(Th2, transfo=[xx5, yy5Min, zz5]);
+mesh3 ThL4 = movemesh23(Th2, transfo=[xx5, yy5Max, zz5]);
+
+ThL1 = ThL1 + ThL3 + ThL4;
+plot(ThL1, wait=1);
+
+ThButtom1 = ThButtom1 + ThL1;
+plot(ThButtom1, wait=1);
+
+func xx6 = x;
+func yy6Min = 1 - M2y - M2Height;
+func yy6Max = 1 - M2y;
+func zz6 = y + M2x;
+mesh3 ThL5 = movemesh23(Th2, transfo=[xx6, yy6Min, zz6]);
+mesh3 ThL6 = movemesh23(Th2, transfo=[xx6, yy6Max, zz6]);
+// ThButtom1 = ThButtom1 + ThL5;
+plot(ThButtom1, wait=1);
+ThL5 = ThL5 + ThL6;
+plot(ThL5, wait=1);
+
+func xx7 = x;
+func yy7 = 1 - M2y - M2Height + y;
+func zz7Min = M2x;
+func zz7Max = M2x + M2Width;
+mesh3 ThL7 = movemesh23(Th2, transfo=[xx7, yy7, zz7Min]);
+mesh3 ThL8 = movemesh23(Th2, transfo=[xx7, yy7, zz7Max]);
+ThL5 = ThL5 + ThL7 + ThL8;
+plot(ThL5, wait=1);
+
+ThButtom1 = ThButtom1 + ThL5;
+plot(ThButtom1, wait=1);
+
+mesh3 ThFinal = tetg(ThButtom1, switch="paAAQY");
+plot(ThFinal, wait=1);
+//medit("ThFinal", ThFinal);
+//savemesh(ThFinal, "weaveMesh3D.mesh");

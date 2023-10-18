@@ -1,0 +1,33 @@
+load "msh3"
+load "tetgen"
+load "medit"
+//include "../Meshfunc2D.edp"
+/*
+int nGrid = 20;
+real radius = 5;
+int nR = nGrid;
+mesh BasicTh = HRectangle(0, 0, 1, 1, 30, 30);
+//plot(BasicTh, wait=1);
+int[int] rup = [0, 5], rdown=[0, 6];
+real oz = 2;
+real zlen = 2;
+int zgrid =  zlen*nGrid;
+mesh3 Th3= buildlayers(BasicTh, zgrid, zbound=[oz, oz+zlen], 
+                      labelup=rup, labeldown=rdown);
+plot(Th3, wait=1);
+Th3 = movemesh3(Th3, transfo=[z*cos(2*pi*x), z*sin(2*pi*x), 4*y]);
+plot(Th3, wait=1);
+*/
+
+border Circle1(t=0, 1){x = cos(2*pi*t); y = sin(2*pi*t); label = 1;}
+border Circle2(t=0, 1){x = 2*cos(2*pi*t); y = 2*sin(2*pi*t); label = 2;}
+int nGrid = 10;
+int nR1 = 2*pi*nGrid;
+int nR2 = 2*pi*nGrid*2;
+mesh ThBase = buildmesh(Circle1(-nR1) + Circle2(nR2));
+plot(ThBase, wait=1);
+
+int[int] rup = [0, 5], rdown=[0, 6];
+mesh3 Th3= buildlayers(ThBase, 5*nGrid, zbound=[0, 5], 
+                      labelup=rup, labeldown=rdown);
+plot(Th3, wait=1);

@@ -1,0 +1,132 @@
+load "msh3"
+load "tetgen"
+include "CellMeshFunc.edp"
+include "../HomoMesh/HomoMeshFunc.edp"
+mesh3 FinalTh;
+real radius = 0.1;
+real rx = 0.2;
+real ry = 0.2;
+int nGrid = 40;
+mesh BasicTh = CCircle(rx, ry, radius, nGrid, 1);
+border Circle(t = 0, 2*pi){x = rx + radius * cos(t); y = ry + radius * sin(t);}
+mesh Circle0 = buildmesh(Circle(2*nGrid));
+
+//plot(BasicTh, wait=1);
+//plot(Circle0, wait=1);
+
+//改变网格的区域编号，下表面编号为1
+int RMM1 = BasicTh(0.1, 0.1).region;
+int[int] R1 = [RMM1, 1];
+BasicTh = change(BasicTh, region=R1);
+Circle0 = change(Circle0, region=R1);
+
+//构造下表面
+//将网格移动到XY平面原点，变换为[x, y, 0]
+mesh3 ThButtom = movemesh23(BasicTh, transfo=[x, y, 0]);
+mesh3 ThButtom0 = movemesh23(Circle0, transfo=[x, y, 0]);
+
+FinalTh = ThButtom;
+//plot(FinalTh, wait=1);
+FinalTh = FinalTh + ThButtom0;
+//plot(FinalTh, wait=1);
+
+//改变区域编号，上表面区域编号为2
+R1[0] = 1;
+R1[1] = 2;
+BasicTh = change(BasicTh, region=R1);
+Circle0 = change(Circle0, region=R1);
+
+//构造上表面
+mesh3 ThTop = movemesh23(BasicTh, transfo=[x, y, 1]);
+mesh3 ThTop0 = movemesh23(Circle0, transfo=[x, y, 1]);
+
+FinalTh = FinalTh + ThTop;
+//plot(FinalTh, wait=1);
+FinalTh = FinalTh + ThTop0;
+//plot(FinalTh, wait=1);
+
+mesh Th = Rectangle2(0, 0, 2*pi, 2*pi, 1, 2, 3, 4, 2*nGrid, 2*nGrid);
+//plot(Th, wait=1);
+mesh3 cylinder0 = movemesh23(Th, transfo=[radius*cos(x)+rx, radius*sin(x)+ry, y/pi*0.5]);
+//plot(cylinder0, wait=1);
+
+FinalTh = FinalTh + cylinder0;
+//plot(FinalTh, wait=1);
+//==========================================================
+//改变区域编号，后表面区域编号为3
+R1[0] = 2;
+R1[1] = 3;
+BasicTh = change(BasicTh, region=R1);
+Circle0 = change(Circle0, region=R1);
+
+//将网格移动到YZ平面原点，变换为[0, y, x],mg，同时对Y轴作对称变换，变为[0,1-y,x]
+mesh3 ThBack = movemesh23(BasicTh, transfo=[0, 1 - y, x]);
+mesh3 ThBack0 = movemesh23(Circle0, transfo=[0, 1 - y, x]);
+
+FinalTh = FinalTh + ThBack;
+//plot(FinalTh, wait=1);
+FinalTh = FinalTh + ThBack0;
+//plot(FinalTh, wait=1);
+
+R1[0] = 3;
+R1[1] = 4;
+BasicTh = change(BasicTh, region=R1);
+Circle0 = change(Circle0, region=R1);
+
+//将网格移动到YZ平面原点，变换为[0, y, x],mg，同时对Y轴作对称变换，变为[0,1-y,x]
+mesh3 ThFront = movemesh23(BasicTh, transfo=[1, 1 - y, x]);
+mesh3 ThFront0 = movemesh23(Circle0, transfo=[1, 1 - y, x]);
+
+FinalTh = FinalTh + ThFront;
+//plot(FinalTh, wait=1);
+FinalTh = FinalTh + ThFront0;
+//plot(FinalTh, wait=1);
+
+mesh3 cylinder1 = movemesh23(Th, transfo=[y/pi*0.5, 1 - radius*cos(x)- rx, radius*sin(x)+ry]);
+//plot(cylinder1, wait=1);
+
+FinalTh = FinalTh + cylinder1;
+//plot(FinalTh, wait=1);
+
+//==========================================================
+R1[0] = 4;
+R1[1] = 5;
+BasicTh = change(BasicTh, region=R1);
+Circle0 = change(Circle0, region=R1);
+
+//构造左表面
+//将网格移动到XZ平面原点，变换为[x, 0, y], 同时对X轴与Z轴作对称变换，变为[1 - x, 0, 1 - y]
+mesh3 ThLeft = movemesh23(BasicTh, transfo=[1 - x, 0, 1 - y]);
+mesh3 ThLeft0 = movemesh23(Circle0, transfo=[1 - x, 0, 1 - y]);
+
+FinalTh = FinalTh + ThLeft;
+//plot(FinalTh, wait=1);
+FinalTh = FinalTh + ThLeft0;
+//plot(FinalTh, wait=1);
+
+R1[0] = 5;
+R1[1] = 6;
+BasicTh = change(BasicTh, region=R1);
+Circle0 = change(Circle0, region=R1);
+
+mesh3 ThRight = movemesh23(BasicTh, transfo=[1 - x, 1, 1 - y]);
+mesh3 ThRight0 = movemesh23(Circle0, transfo=[1 - x, 1, 1 - y]);
+
+FinalTh = FinalTh + ThRight;
+//plot(FinalTh, wait=1);
+FinalTh = FinalTh + ThRight0;
+//plot(FinalTh, wait=1);
+
+mesh3 cylinder2 = movemesh23(Th, transfo=[1-radius*cos(x)-rx, y/pi*0.5, 1 - radius*sin(x) - ry]);
+//plot(cylinder2, wait=1);
+
+FinalTh = FinalTh + cylinder2;
+//plot(FinalTh, wait=1);
+
+real[int] domain = [0.01, 0.01, 0.01, 11, 0.0001, 
+                      rx, ry, 0.5, 12, 0.0001, 
+                      0.5, 1-rx, ry, 13, 0.0001,
+                      1-rx, 0.5, 1-ry, 14, 0.001];
+mesh3 CellTh = tetg(FinalTh, switch="paAAQY", nbofregions = 4, regionlist=domain);
+//savemesh(CellTh, "3XWeave.mesh");
+plot(CellTh, wait=1);

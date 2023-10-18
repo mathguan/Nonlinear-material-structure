@@ -1,0 +1,98 @@
+include "../MeshFunc3D.edp"
+func mesh3 CRandEllipsoid(int count, bool isHole)
+{
+	int[int] N=[30, 30, 30];
+	real[int ,int] B = [[0, 1], [0, 1], [0, 1]];
+	int[int, int] L = [[1, 2], [3, 4], [5, 6]];
+	mesh3 Th = SurfaceHex(N, B, L, 1);
+	real[int] ra(count), rb(count), rc(count), radius(count), rx(count), ry(count), rz(count);
+	real[int] alpha(count), beta(count), gamma(count);
+	int c = time();
+	randinit(c);
+	for(int i = 0; i < count; i++)
+	{
+		int flag = true;
+		while(flag)
+		{
+			ra[i] = 0.05*randreal1() + 0.1;
+			rb[i] = 0.1*randreal1() + 0.03;
+			rc[i] = 0.1*randreal1() + 0.05;
+			radius[i] = max(max(ra[i], rb[i]), rc[i]);
+			alpha[i] = randreal1();
+			beta[i] = randreal1();
+			gamma[i] = randreal1();
+			rx[i] = randreal3();
+			ry[i] = randreal3();
+			rz[i] = randreal3();
+			if(rx[i] + radius[i] < 1 && rx[i] - radius[i] > 0 && 
+		       ry[i] + radius[i] < 1 && ry[i] - radius[i] > 0 &&
+		       rz[i] + radius[i] < 1 && rz[i] - radius[i] > 0)
+		    {
+			    int j = 0;
+			    for(j = 0; j < i; j++)
+			    {
+				    if(radius[i] + radius[j] >= sqrt((rx[i] - rx[j])^2 + (ry[i] - ry[j])^2 + (rz[i] - rz[j])^2))
+				    {
+					    break;
+					}
+				}
+				if(j == i)
+				    flag = false;
+		     }
+	    }
+	    
+	    mesh3 ThBall = Ellipsoid(0, 0, 0, ra[i], rb[i], rc[i], 0.005, 10, 1);
+	    func fx = (cos(gamma[i])*cos(alpha[i]) - sin(gamma[i])*cos(beta[i])*sin(alpha[i]))*x 
+	            + (-cos(gamma[i])*sin(alpha[i]) - sin(gamma[i])*cos(beta[i])*cos(alpha[i]))*y 
+	            + sin(gamma[i])*sin(beta[i])*z;
+	    func fy = (sin(gamma[i])*cos(alpha[i]) + cos(gamma[i])*cos(beta[i])*sin(alpha[i]))*x 
+	            + (-sin(gamma[i])*sin(alpha[i]) + cos(gamma[i])*cos(beta[i])*cos(alpha[i]))*y 
+	            - cos(gamma[i])*sin(beta[i])*z;
+	    func fz = sin(beta[i])*sin(alpha[i])*x + sin(beta[i])*cos(alpha[i])*y + cos(beta[i])*z;
+	    ThBall = movemesh3(ThBall, transfo=[rx[i] + fx, ry[i] + fy, rz[i] + fz]);
+	                   //Sphere(rx[i], ry[i], rz[i], radius[i], 0.03, 10, 1);
+	    Th = Th + ThBall;
+	    cout << "generate the " << i + 1 << "th ellipsoid----------------------------------------" << endl; 
+    }
+	
+	
+	mesh3 CellTh;
+	if(!isHole)
+	{
+		real[int] domain((count+1)*5);
+		domain[0] = 0.01;
+		domain[1] = 0.01;
+		domain[2] = 0.01;
+		domain[3] = 53;
+		domain[4] = 0.00005;
+		for(int i = 0; i < count; i++)
+		{
+			domain[(i+1)*5] = rx[i];
+			domain[(i+1)*5 + 1] = ry[i];
+			domain[(i+1)*5 + 2] = rz[i];
+			domain[(i+1)*5 + 3] = 54;
+			domain[(i+1)*5 + 4] = 0.00005;
+		}
+		CellTh = tetg(Th, switch="paAAQYY", nbofregions=count + 1, regionlist=domain);
+	}else
+	{
+		real[int] domain = [0.01, 0.01, 0.01, 53, 0.00005];
+		real[int] hole(count*3);
+		for(int i = 0; i < count; i++)
+		{
+			hole[i*3] = rx[i];
+			hole[i*3 + 1] = ry[i];
+			hole[i*3 + 2] = rz[i];
+		}
+		
+		CellTh = tetg(Th, switch="paAAQYY", nbofholes=count, holelist=hole, nbofregions=1, regionlist=domain);
+	}
+	//plot(Th, wait=1);
+ 	
+ 	//return CellTh;
+ 	return CellTh;
+}
+
+mesh3 CellTh = CRandEllipsoid(50, 0);
+plot(CellTh, wait=1);
+savemesh(CellTh, "CRandEllipsoid.mesh");

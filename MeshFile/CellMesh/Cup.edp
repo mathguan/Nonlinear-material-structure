@@ -1,0 +1,28 @@
+load "msh3"
+load "tetgen"
+load "medit"
+border M1(t=0,1){x=t; y=0;label=1;}
+border M2(t=0,0.5){x=1;y=t; label=2;}
+border M3(t=0,0.5){x=1-t; y=0.5;label=3;}
+border M4(t=0,0.5){x=0.5; y=0.5+t; label=4;}
+border M5(t=0,0.5){x=0.5-t; y=1; label=5;}
+border M6(t=0,1){x=0; y=1-t;label=6;}
+int nGrid0 = 20;
+int nGrid1 = nGrid0*0.5;
+mesh ThL = buildmesh(M1(nGrid0)
+	                   +M2(nGrid1)+M3(nGrid1)+M4(nGrid1)+M5(nGrid1)
+	                   +M6(nGrid0));
+plot(ThL, wait=1);
+
+ThL = movemesh(ThL, [x, 0.5-y]);
+plot(ThL, wait=1);
+
+mesh3 Cup = buildlayers(ThL, 30, zbound=[0, 2*pi], transfo=[x,y*cos(z),y*sin(z)], facemerge=1);
+plot(Cup, wait=1);
+Cup = movemesh3(Cup, transfo=[-z, y, x]);
+plot(Cup, wait=1);
+func fx = y <=0.5?y*cos(x):0.5+y*cos(x);
+func fy = y <=0.5?y*sin(x):0.5+y*sin(x);
+Cup = movemesh3(Cup, transfo=[y*cos(x), y*sin(x), z]);
+plot(Cup, wait=1);
+//medit("Cup", Cup);

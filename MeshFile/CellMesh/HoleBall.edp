@@ -1,0 +1,17 @@
+
+include "../MeshFunc3D.edp"
+real rx = 0;
+real ry = 0;
+real rz = 0;
+real radius1 = 0.5;
+real radius2 = 1;
+real hs = 0.1;
+mesh3 ThBall1 = Sphere(rx, ry, rz, radius1, hs, 10, 1);
+mesh3 ThBall2 = Sphere(rx, ry, rz, radius2, hs, 10, 1);
+mesh3 HoleBall = ThBall1 + ThBall2;
+real[int] hole = [rx, ry, rz];
+real maxVol = (1./10)^3/6;
+real[int] domain = [rx, ry, (radius1+radius2)/2, 53, maxVol];
+mesh3 HoleBall3D = tetg(HoleBall, switch="paAAQYY", nbofholes=1, holelist=hole, nbofregions=1, regionlist=domain);
+savemesh(HoleBall3D, "HoleBall3D.mesh");
+plot(HoleBall3D, wait=1);

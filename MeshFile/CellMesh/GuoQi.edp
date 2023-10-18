@@ -1,0 +1,144 @@
+//根据五星红旗的制作方法，利用FreeFem++生成五星红旗网格
+//国旗规格30:20
+
+//五角星信息生成函数，主要生成外边界十个点的坐标
+func real Star(real ox, real oy, real theta, real radius, 
+               real[int]& aX, real[int]& aY, 
+               real[int]& bX, real[int]& bY)
+{
+	real angle18 = 0.1*pi;
+    real angle36 = 0.2*pi;
+    real angle54 = 0.3*pi;
+    real angle72 = 0.4*pi;
+    real bLen = radius*sin(angle18)/sin(angle54);
+    for(int i = 0; i < 5; i++)
+    {
+	    aX[i] = radius*cos(angle18 + angle72*i + theta) + ox;
+	    aY[i] = radius*sin(angle18 + angle72*i + theta) + oy;
+    	bX[i] = bLen*cos(angle54 + angle72*i + theta) + ox;
+	    bY[i] = bLen*sin(angle54 + angle72*i + theta) + oy;
+    }
+}
+
+//国旗外边界
+border C01(t=0, 30) {x=t; y=0;label=1;}
+border C02(t=0, 20) {x=30; y=t;label=2;}
+border C03(t=0, 30) {x=(30-t); y=20;label=3;}
+border C04(t=0, 20) {x=0; y=20-t;label=4;}
+
+//大星，代表中国共产党
+real[int] bigAX(5), bigAY(5), bigBX(5), bigBY(5);
+Star(5, 15, 0, 3, bigAX, bigAY, bigBX, bigBY);
+border BigStar1(t=0, 1) {x = (1 - t) * bigAX[0] + t * bigBX[0]; y = (1 - t) * bigAY[0] + t * bigBY[0]; label = 20;} // a0 -- b0
+border BigStar2(t=0, 1) {x = (1 - t) * bigBX[0] + t * bigAX[1]; y = (1 - t) * bigBY[0] + t * bigAY[1]; label = 20;} // b0 -- a1
+border BigStar3(t=0, 1) {x = (1 - t) * bigAX[1] + t * bigBX[1]; y = (1 - t) * bigAY[1] + t * bigBY[1]; label = 20;} // a1 -- b1
+border BigStar4(t=0, 1) {x = (1 - t) * bigBX[1] + t * bigAX[2]; y = (1 - t) * bigBY[1] + t * bigAY[2]; label = 20;} // b1 -- a2
+border BigStar5(t=0, 1) {x = (1 - t) * bigAX[2] + t * bigBX[2]; y = (1 - t) * bigAY[2] + t * bigBY[2]; label = 20;} // a2 -- b2
+border BigStar6(t=0, 1) {x = (1 - t) * bigBX[2] + t * bigAX[3]; y = (1 - t) * bigBY[2] + t * bigAY[3]; label = 20;} // b2 -- a3
+border BigStar7(t=0, 1) {x = (1 - t) * bigAX[3] + t * bigBX[3]; y = (1 - t) * bigAY[3] + t * bigBY[3]; label = 20;} // a3 -- b3
+border BigStar8(t=0, 1) {x = (1 - t) * bigBX[3] + t * bigAX[4]; y = (1 - t) * bigBY[3] + t * bigAY[4]; label = 20;} // b3 -- a4
+border BigStar9(t=0, 1) {x = (1 - t) * bigAX[4] + t * bigBX[4]; y = (1 - t) * bigAY[4] + t * bigBY[4]; label = 20;} // a4 -- b4
+border BigStar10(t=0, 1) {x = (1 - t) * bigBX[4] + t * bigAX[0]; y = (1 - t) * bigBY[4] + t * bigAY[0]; label = 20;} // b4 -- a0
+
+    
+//依次从上到下生成四颗小心，代表全国各族人民，注意该四颗星各有一角对准大星的中心。
+real[int] smallAX1(5), smallAY1(5), smallBX1(5), smallBY1(5);
+Star(10, 18, pi/2 + atan(3./5), 1, smallAX1, smallAY1, smallBX1, smallBY1);
+border SmallStar11(t=0, 1) {x = (1 - t) * smallAX1[0] + t * smallBX1[0]; y = (1 - t) * smallAY1[0] + t * smallBY1[0]; label = 20;} // a0 -- b0
+border SmallStar12(t=0, 1) {x = (1 - t) * smallBX1[0] + t * smallAX1[1]; y = (1 - t) * smallBY1[0] + t * smallAY1[1]; label = 20;} // b0 -- a1
+border SmallStar13(t=0, 1) {x = (1 - t) * smallAX1[1] + t * smallBX1[1]; y = (1 - t) * smallAY1[1] + t * smallBY1[1]; label = 20;} // a1 -- b1
+border SmallStar14(t=0, 1) {x = (1 - t) * smallBX1[1] + t * smallAX1[2]; y = (1 - t) * smallBY1[1] + t * smallAY1[2]; label = 20;} // b1 -- a2
+border SmallStar15(t=0, 1) {x = (1 - t) * smallAX1[2] + t * smallBX1[2]; y = (1 - t) * smallAY1[2] + t * smallBY1[2]; label = 20;} // a2 -- b2
+border SmallStar16(t=0, 1) {x = (1 - t) * smallBX1[2] + t * smallAX1[3]; y = (1 - t) * smallBY1[2] + t * smallAY1[3]; label = 20;} // b2 -- a3
+border SmallStar17(t=0, 1) {x = (1 - t) * smallAX1[3] + t * smallBX1[3]; y = (1 - t) * smallAY1[3] + t * smallBY1[3]; label = 20;} // a3 -- b3
+border SmallStar18(t=0, 1) {x = (1 - t) * smallBX1[3] + t * smallAX1[4]; y = (1 - t) * smallBY1[3] + t * smallAY1[4]; label = 20;} // b3 -- a4
+border SmallStar19(t=0, 1) {x = (1 - t) * smallAX1[4] + t * smallBX1[4]; y = (1 - t) * smallAY1[4] + t * smallBY1[4]; label = 20;} // a4 -- b4
+border SmallStar110(t=0, 1) {x = (1 - t) * smallBX1[4] + t * smallAX1[0]; y = (1 - t) * smallBY1[4] + t * smallAY1[0]; label = 20;} // b4 -- a0
+
+real[int] smallAX2(5), smallAY2(5), smallBX2(5), smallBY2(5);
+Star(12, 16, pi/2 + atan(1./7), 1, smallAX2, smallAY2, smallBX2, smallBY2);
+border SmallStar21(t=0, 1) {x = (1 - t) * smallAX2[0] + t * smallBX2[0]; y = (1 - t) * smallAY2[0] + t * smallBY2[0]; label = 20;} // a0 -- b0
+border SmallStar22(t=0, 1) {x = (1 - t) * smallBX2[0] + t * smallAX2[1]; y = (1 - t) * smallBY2[0] + t * smallAY2[1]; label = 20;} // b0 -- a1
+border SmallStar23(t=0, 1) {x = (1 - t) * smallAX2[1] + t * smallBX2[1]; y = (1 - t) * smallAY2[1] + t * smallBY2[1]; label = 20;} // a1 -- b1
+border SmallStar24(t=0, 1) {x = (1 - t) * smallBX2[1] + t * smallAX2[2]; y = (1 - t) * smallBY2[1] + t * smallAY2[2]; label = 20;} // b1 -- a2
+border SmallStar25(t=0, 1) {x = (1 - t) * smallAX2[2] + t * smallBX2[2]; y = (1 - t) * smallAY2[2] + t * smallBY2[2]; label = 20;} // a2 -- b2
+border SmallStar26(t=0, 1) {x = (1 - t) * smallBX2[2] + t * smallAX2[3]; y = (1 - t) * smallBY2[2] + t * smallAY2[3]; label = 20;} // b2 -- a3
+border SmallStar27(t=0, 1) {x = (1 - t) * smallAX2[3] + t * smallBX2[3]; y = (1 - t) * smallAY2[3] + t * smallBY2[3]; label = 20;} // a3 -- b3
+border SmallStar28(t=0, 1) {x = (1 - t) * smallBX2[3] + t * smallAX2[4]; y = (1 - t) * smallBY2[3] + t * smallAY2[4]; label = 20;} // b3 -- a4
+border SmallStar29(t=0, 1) {x = (1 - t) * smallAX2[4] + t * smallBX2[4]; y = (1 - t) * smallAY2[4] + t * smallBY2[4]; label = 20;} // a4 -- b4
+border SmallStar210(t=0, 1) {x = (1 - t) * smallBX2[4] + t * smallAX2[0]; y = (1 - t) * smallBY2[4] + t * smallAY2[0]; label = 20;} // b4 -- a0
+
+real[int] smallAX3(5), smallAY3(5), smallBX3(5), smallBY3(5);
+Star(12, 13, pi/2 - atan(2./7), 1, smallAX3, smallAY3, smallBX3, smallBY3);
+border SmallStar31(t=0, 1) {x = (1 - t) * smallAX3[0] + t * smallBX3[0]; y = (1 - t) * smallAY3[0] + t * smallBY3[0]; label = 20;} // a0 -- b0
+border SmallStar32(t=0, 1) {x = (1 - t) * smallBX3[0] + t * smallAX3[1]; y = (1 - t) * smallBY3[0] + t * smallAY3[1]; label = 20;} // b0 -- a1
+border SmallStar33(t=0, 1) {x = (1 - t) * smallAX3[1] + t * smallBX3[1]; y = (1 - t) * smallAY3[1] + t * smallBY3[1]; label = 20;} // a1 -- b1
+border SmallStar34(t=0, 1) {x = (1 - t) * smallBX3[1] + t * smallAX3[2]; y = (1 - t) * smallBY3[1] + t * smallAY3[2]; label = 20;} // b1 -- a2
+border SmallStar35(t=0, 1) {x = (1 - t) * smallAX3[2] + t * smallBX3[2]; y = (1 - t) * smallAY3[2] + t * smallBY3[2]; label = 20;} // a2 -- b2
+border SmallStar36(t=0, 1) {x = (1 - t) * smallBX3[2] + t * smallAX3[3]; y = (1 - t) * smallBY3[2] + t * smallAY3[3]; label = 20;} // b2 -- a3
+border SmallStar37(t=0, 1) {x = (1 - t) * smallAX3[3] + t * smallBX3[3]; y = (1 - t) * smallAY3[3] + t * smallBY3[3]; label = 20;} // a3 -- b3
+border SmallStar38(t=0, 1) {x = (1 - t) * smallBX3[3] + t * smallAX3[4]; y = (1 - t) * smallBY3[3] + t * smallAY3[4]; label = 20;} // b3 -- a4
+border SmallStar39(t=0, 1) {x = (1 - t) * smallAX3[4] + t * smallBX3[4]; y = (1 - t) * smallAY3[4] + t * smallBY3[4]; label = 20;} // a4 -- b4
+border SmallStar310(t=0, 1) {x = (1 - t) * smallBX3[4] + t * smallAX3[0]; y = (1 - t) * smallBY3[4] + t * smallAY3[0]; label = 20;} // b4 -- a0
+
+
+real[int] smallAX4(5), smallAY4(5), smallBX4(5), smallBY4(5);
+Star(10, 11, pi/2 - atan(4./5), 1, smallAX4, smallAY4, smallBX4, smallBY4);
+border SmallStar41(t=0, 1) {x = (1 - t) * smallAX4[0] + t * smallBX4[0]; y = (1 - t) * smallAY4[0] + t * smallBY4[0]; label = 20;} // a0 -- b0
+border SmallStar42(t=0, 1) {x = (1 - t) * smallBX4[0] + t * smallAX4[1]; y = (1 - t) * smallBY4[0] + t * smallAY4[1]; label = 20;} // b0 -- a1
+border SmallStar43(t=0, 1) {x = (1 - t) * smallAX4[1] + t * smallBX4[1]; y = (1 - t) * smallAY4[1] + t * smallBY4[1]; label = 20;} // a1 -- b1
+border SmallStar44(t=0, 1) {x = (1 - t) * smallBX4[1] + t * smallAX4[2]; y = (1 - t) * smallBY4[1] + t * smallAY4[2]; label = 20;} // b1 -- a2
+border SmallStar45(t=0, 1) {x = (1 - t) * smallAX4[2] + t * smallBX4[2]; y = (1 - t) * smallAY4[2] + t * smallBY4[2]; label = 20;} // a2 -- b2
+border SmallStar46(t=0, 1) {x = (1 - t) * smallBX4[2] + t * smallAX4[3]; y = (1 - t) * smallBY4[2] + t * smallAY4[3]; label = 20;} // b2 -- a3
+border SmallStar47(t=0, 1) {x = (1 - t) * smallAX4[3] + t * smallBX4[3]; y = (1 - t) * smallAY4[3] + t * smallBY4[3]; label = 20;} // a3 -- b3
+border SmallStar48(t=0, 1) {x = (1 - t) * smallBX4[3] + t * smallAX4[4]; y = (1 - t) * smallBY4[3] + t * smallAY4[4]; label = 20;} // b3 -- a4
+border SmallStar49(t=0, 1) {x = (1 - t) * smallAX4[4] + t * smallBX4[4]; y = (1 - t) * smallAY4[4] + t * smallBY4[4]; label = 20;} // a4 -- b4
+border SmallStar410(t=0, 1) {x = (1 - t) * smallBX4[4] + t * smallAX4[0]; y = (1 - t) * smallBY4[4] + t * smallAY4[0]; label = 20;} // b4 -- a0
+
+
+//生成网格
+mesh GuoQi = buildmesh(C01(120) + C02(80) + C03(120)+ C04(80)
+    + BigStar1(12) + BigStar2(12) + BigStar3(12) + BigStar4(12) + BigStar5(12) 
+    + BigStar6(12) + BigStar7(12) + BigStar8(12) + BigStar9(12) + BigStar10(12)
+    
+    + SmallStar11(4) + SmallStar12(4) + SmallStar13(4) + SmallStar14(4) + SmallStar15(4) 
+    + SmallStar16(4) + SmallStar17(4) + SmallStar18(4) + SmallStar19(4) + SmallStar110(4)
+    
+    + SmallStar21(4) + SmallStar22(4) + SmallStar23(4) + SmallStar24(4) + SmallStar25(4) 
+    + SmallStar26(4) + SmallStar27(4) + SmallStar28(4) + SmallStar29(4) + SmallStar210(4)
+    
+    + SmallStar31(4) + SmallStar32(4) + SmallStar33(4) + SmallStar34(4) + SmallStar35(4) 
+    + SmallStar36(4) + SmallStar37(4) + SmallStar38(4) + SmallStar39(4) + SmallStar310(4)
+    
+    + SmallStar41(4) + SmallStar42(4) + SmallStar43(4) + SmallStar44(4) + SmallStar45(4) 
+    + SmallStar46(4) + SmallStar47(4) + SmallStar48(4) + SmallStar49(4) + SmallStar410(4));
+
+//调整区域编号
+int[int] R1=[0, 1];
+R1[0] = GuoQi(0.1, 0.1).region;
+GuoQi = change(GuoQi, region=R1);
+//plot(GuoQi, wait=1);
+
+R1[0] = GuoQi(5, 15).region;
+R1[1] = 4;
+GuoQi = change(GuoQi, region=R1);
+//plot(GuoQi, wait=1);
+
+R1[0] = GuoQi(10, 18).region;
+R1[1] = 4;
+GuoQi = change(GuoQi, region=R1);
+//plot(GuoQi, wait=1);
+
+R1[0] = GuoQi(12, 16).region;
+GuoQi = change(GuoQi, region=R1);
+//plot(GuoQi, wait=1);
+
+R1[0] = GuoQi(12, 13).region;
+GuoQi = change(GuoQi, region=R1);
+//plot(GuoQi, wait=1);
+
+R1[0] = GuoQi(10, 11).region;
+GuoQi = change(GuoQi, region=R1);
+
+//画出网格
+plot(GuoQi, wait=1);    

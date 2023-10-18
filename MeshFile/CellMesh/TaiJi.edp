@@ -1,0 +1,6 @@
+border C1(t=pi, 2*pi){x=2*cos(t); y=2*sin(t); label=1;}
+border C2(t=0, pi){x=2*cos(t); y=2*sin(t); label=1;}
+border C3(t=0, pi){x=-1+cos(t);y=sin(t); label=2;}
+border C4(t=2*pi,pi){x=1+cos(t);y=sin(t); label=2;}
+
+plot(C1(40)+C3(20)+C4(20));

@@ -1,0 +1,186 @@
+/*判断两条线段是否相交
+  变量描述
+  x1, y1 -- 线段1起点
+  x2, y2 -- 线段1终点
+  x3, y3 -- 线段2起点
+  x4, y4 -- 线段2终点
+  判断方法：若线段1两端点否在线段2两侧并且线段2两端点在线段1两侧，则两线段相交
+          若一条线段端点落在另一条线段上，也视为相交
+*/
+func bool isIntersect(real x1, real y1, 
+                      real x2, real y2, 
+                      real x3, real y3, 
+                      real x4, real y4)
+{
+	real v1 = (x2-x1)*(y3-y1)-(x3-x1)*(y2-y1);
+	real v2 = (x2-x1)*(y4-y1)-(x4-x1)*(y2-y1);
+	if(v1*v2 >0)
+	    return false;
+	real v3 = (x4-x3)*(y1-y3)-(x1-x3)*(y4-y3);
+	real v4 = (x4-x3)*(y2-y3)-(x2-x3)*(y4-y3);
+	if(v3*v4 >0)
+	    return false;
+	return true;
+}
+
+// cout << isIntersect(0, 0, 1, 0, 0, 1, 0, 0) << endl;
+/*
+    判断两多边形是否相交
+    变量描述
+    x1 -- 多边形1的x坐标数组
+    y1 -- 多边形1的y坐标数组
+    x2 -- 多边形2的x坐标数组
+    y2 -- 多边形2的y坐标数组
+    n -- 多边形边数
+    判断方法：判断多边形1的每条边是否与多边形2的每条边相交，若相交，则返回1,否则返回0
+*/
+func bool isPolygonIntersect(real[int] &x1, real[int] &y1, real[int] &x2, real[int] &y2, int n)
+{
+	int intersect = false;
+	for(int i=0; i<n; i++)
+	{
+		real L1x1 = x1[i];
+		real L1y1 = y1[i];
+		real L1x2 = x1[(i+1)%n];
+		real L1y2 = y1[(i+1)%n];
+		for(int j=0; j<n; j++)
+		{
+			real L2x1 = x2[j];
+			real L2y1 = y2[j];
+			real L2x2 = x2[(j+1)%n];
+			real L2y2 = y2[(j+1)%n];
+			if(isIntersect(L1x1, L1y1, L1x2, L1y2, L2x1, L2y1, L2x2, L2y2))
+			    return true;
+		}
+	}
+	return false;
+}
+
+// real[int] triangle1x = [0, 1, 0], triangle1y = [0, 0, 1];
+// real[int] triangle2x = [0.5, 3, 3], triangle2y = [0.5, 0, 1];
+// cout << isPolygonIntersect(triangle1x, triangle1y, triangle2x, triangle2y, 3) << endl;
+
+/*
+    判断多边形是否在正方形[0, 1] x [0, 1]内
+*/
+func bool isInSquare(real[int] &x1, real[int] &y1, int n)
+{
+	for(int i=0; i<n; i++)
+	{
+		if(x1[i] <= 0 || x1[i]-1 >= 0 || y1[i] <= 0 || y1[i] - 1>=0)
+		    return false;
+	}
+	return true;
+}
+
+/**
+    计算三角形面积
+*/
+func real area(real x1, real y1, real x2, real y2, real x3, real y3)
+{
+	return ((x2*y3-x3*y2)-(x1*y3-x3*y1)+x1*y2-x2*y1)*0.5;
+}
+//cout << area(-0.5, 0, 0.5, 0, 0, sqrt(3)/2) << endl;
+
+/*
+    生成椭圆外接八边形
+*/
+func int generateOct(real a, real b, real rx, real ry, real theta, real[int]& ellx, real[int]& elly)
+{
+	ellx[0] = a*cos(theta)-(sqrt(2)-1)*b*sin(theta) + rx;
+	elly[0] = a*sin(theta)+(sqrt(2)-1)*b*cos(theta) + ry;
+	ellx[1] = (sqrt(2)-1)*a*cos(theta)-b*sin(theta) + rx;
+	elly[1] = (sqrt(2)-1)*a*sin(theta)+b*cos(theta) + ry;
+	ellx[2] = (1-sqrt(2))*a*cos(theta)-b*sin(theta) + rx;
+	elly[2] = (1-sqrt(2))*a*sin(theta)+b*cos(theta) + ry;
+	ellx[3] = -a*cos(theta)-(sqrt(2)-1)*b*sin(theta) + rx;
+	elly[3] = -a*sin(theta)+(sqrt(2)-1)*b*cos(theta) + ry;
+	ellx[4] = -a*cos(theta)-(1-sqrt(2))*b*sin(theta) + rx;
+	elly[4] = -a*sin(theta)+(1-sqrt(2))*b*cos(theta) + ry;
+	ellx[5] = (1-sqrt(2))*a*cos(theta)+b*sin(theta) + rx;
+	elly[5] = (1-sqrt(2))*a*sin(theta)-b*cos(theta) + ry;
+	ellx[6] = (sqrt(2)-1)*a*cos(theta)+b*sin(theta) + rx;
+	elly[6] = (sqrt(2)-1)*a*sin(theta)-b*cos(theta) + ry;
+	ellx[7] = a*cos(theta)-(1-sqrt(2))*b*sin(theta) + rx;
+	elly[7] = a*sin(theta)+(1-sqrt(2))*b*cos(theta) + ry;
+	return 0;	
+}
+
+/*
+    生成椭圆外接矩形
+*/
+func int generate4(real a, real b, real rx, real ry, real theta, real[int]& ellx, real[int]& elly)
+{
+	ellx[0] =  a*cos(theta)-b*sin(theta) + rx;
+	elly[0] =  a*sin(theta)+b*cos(theta) + ry;
+	ellx[1] = -a*cos(theta)-b*sin(theta) + rx;
+	elly[1] = -a*sin(theta)+b*cos(theta) + ry;
+	ellx[2] = -a*cos(theta)+b*sin(theta) + rx;
+	elly[2] = -a*sin(theta)-b*cos(theta) + ry;
+	ellx[3] =  a*cos(theta)+b*sin(theta) + rx;
+	elly[3] =  a*sin(theta)-b*cos(theta) + ry;
+}
+
+/*
+    判断点是否在多边形区域内方法1, 对该点(x, y), 多边形(ai, bi)(i=1,..,n), 在事先知道多边形面积的情况下
+    计算(x, y)与(ai, bi), (a(i+1), b(i+1))的三角形面积之和是否与多边形面积相等，若相等，则返回true,
+    否则返回false
+*/
+func bool isInPolygon(real ra, real rb, real[int] &px, real[int] &py, real n, real areaEll)
+{
+	real sum = 0;
+	for(int i = 0; i < n ; i++)
+	{
+		real x1 = px[i];
+		real y1 = py[i];
+		real x2 = px[(i+1)%n];
+		real y2 = py[(i+1)%n];
+		sum += abs(area(x1, y1, x2, y2, ra, rb));
+	}
+	if(abs(sum-areaEll) < 1e-6)
+	{
+		return true;
+	}
+	return false;
+} 
+
+
+/*
+    判断点是否在多边形区域内方法2, 找到一个明显在该凸多边形区域外一点，判断点(x, y)与该点的连线与多边形各边的相交情况，
+    若交点个数为1，则返回true,否则返回false.
+*/
+func bool isInPolygon2(real ra, real rb, real[int] &px, real[int] &py, real n, real rx, real ry)
+{
+	int sum = 0;
+	for(int i = 0; i < n ; i++)
+	{
+		real x1 = px[i];
+		real y1 = py[i];
+		real x2 = px[(i+1)%n];
+		real y2 = py[(i+1)%n];
+		if(isIntersect(x1, y1, x2, y2, ra, rb, rx, ry))
+		{
+			sum += 1;
+		}
+	}
+	if(sum == 1)
+	{
+		return true;
+	}
+	return false;
+} 
+
+/*
+real[int] ex(8);
+real[int] ey(8);
+generateOct(4, 3, 0, 0, 0, ex, ey);
+
+for(real i = -3; i <= 3; i+=0.5)
+{
+	for(real j = -4; j <= 4; j+=0.5)
+	{
+		cout << isInPolygon2(i, j, ex, ey, 8, 5, 0) << "  ";
+	}
+	cout << endl;
+}
+*/

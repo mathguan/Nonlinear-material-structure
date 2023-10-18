@@ -1,0 +1,61 @@
+load "msh3"
+load "tetgen"
+load "medit"
+include "MeshSurface.idp"
+
+mesh3 MacroTh;
+int RM0;
+int[int, int] RM1(8, 8), RM2(8, 8), RM3(8, 8), RM4(8, 8), 
+              RM5(8, 8), RM6(8, 8), RM7(8, 8), RM8(8, 8);
+              
+{
+	int n = 8;
+	real epsilon = 1./n;
+	real rx = 0.5;
+	real ry = 0.5;
+	real rz = 0.5;
+	real hs = 0.05*epsilon;
+	real radius = 0.3;
+	
+	int[int] N=[50, 50, 50];
+	real[int ,int] B = [[0, 1], [0, 1], [0, 1]];
+	int[int, int] L = [[1, 2], [3, 4], [5, 6]];
+	mesh3 Th = SurfaceHex(N, B, L, 1);
+	for(int i = 0; i < n; i++)
+	{
+		for(int j = 0; j < n; j++)
+		{
+			for(int k=0; k < n; k++)
+			{
+				real cx = (rx+k)*epsilon;
+				real cy = (ry+j)*epsilon;
+				real cz = (rz+i)*epsilon;
+				mesh3 ThBall = Sphere(cx, cy, cz, radius*epsilon, hs, 10, 1);
+				Th = Th + ThBall;
+			}
+		}
+	}
+	
+	MacroTh = tetg(Th);
+	plot(Th, wait=1);
+	//savemesh(MacroTh, "MacroThBall3D8.mesh");
+	RM0 = MacroTh(0.001, 0.001, 0.001).region;
+	for(int j = 0; j < n; j++)
+	{
+		for(int k = 0; k < n; k++)
+		{
+			real cx = (rx+k)*epsilon;
+			real cy = (ry+j)*epsilon;
+			RM1(j, k) = MacroTh(cx, cy,  rz*epsilon).region;
+			RM2(j, k) = MacroTh(cx, cy, (rz+1)*epsilon).region;
+			RM3(j, k) = MacroTh(cx, cy, (rz+2)*epsilon).region;
+			RM4(j, k) = MacroTh(cx, cy, (rz+3)*epsilon).region;
+			RM5(j, k) = MacroTh(cx, cy, (rz+4)*epsilon).region;
+			RM6(j, k) = MacroTh(cx, cy, (rz+5)*epsilon).region;
+			RM7(j, k) = MacroTh(cx, cy, (rz+6)*epsilon).region;
+			RM8(j, k) = MacroTh(cx, cy, (rz+7)*epsilon).region;
+		}
+	}
+	
+}
+

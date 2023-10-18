@@ -1,0 +1,131 @@
+//三维区域生成网格生成函数
+load "msh3"
+load "tetgen"
+load "medit"
+func mesh3 SurfaceHex(int[int] & N,real[int,int] &B ,int[int,int] & L,int orientation)
+{
+    real x0=B(0,0),x1=B(0,1);
+    real y0=B(1,0),y1=B(1,1);
+    real z0=B(2,0),z1=B(2,1);
+    
+    int nx=N[0],ny=N[1],nz=N[2];
+    
+    mesh Thx = square(ny,nz,[y0+(y1-y0)*x,z0+(z1-z0)*y]);
+    mesh Thy = square(nx,nz,[x0+(x1-x0)*x,z0+(z1-z0)*y]);
+    mesh Thz = square(nx,ny,[x0+(x1-x0)*x,y0+(y1-y0)*y]);
+    
+    int[int] refx=[0,L(0,0)],refX=[0,L(0,1)];   //  Xmin, Ymax faces labels renumbering 
+    int[int] refy=[0,L(1,0)],refY=[0,L(1,1)];   //  Ymin, Ymax faces labesl renumbering 
+    int[int] refz=[0,L(2,0)],refZ=[0,L(2,1)];   //  Zmin, Zmax faces labels renumbering 
+    
+    mesh3 Thx0 = movemesh23(Thx,transfo=[x0,x,y],orientation=-orientation,label=refx);
+    mesh3 Thx1 = movemesh23(Thx,transfo=[x1,x,y],orientation=+orientation,label=refX);
+    mesh3 Thy0 = movemesh23(Thy,transfo=[x,y0,y],orientation=+orientation,label=refy);
+    mesh3 Thy1 = movemesh23(Thy,transfo=[x,y1,y],orientation=-orientation,label=refY);
+    mesh3 Thz0 = movemesh23(Thz,transfo=[x,y,z0],orientation=-orientation,label=refz);
+    mesh3 Thz1 = movemesh23(Thz,transfo=[x,y,z1],orientation=+orientation,label=refZ);
+    mesh3 Th= Thx0+Thx1+Thy0+Thy1+Thz0+Thz1;
+    return Th;
+}
+
+func mesh3 Sphere(real rx, real ry, real rz, real R,real h,int L,int orientation)
+{
+  mesh  Th=square(25,50,[x*pi-pi/2,2*y*pi]);  //  [-pi/2,pi/2]x[0,2*pi]
+  //  a parametrization of a sphere 
+  func f1 =cos(x)*cos(y);
+  func f2 =cos(x)*sin(y);
+  func f3 = sin(x);
+  //    partiel derivative 
+  func f1x=sin(x)*cos(y);   
+  func f1y=-cos(x)*sin(y);
+  func f2x=-sin(x)*sin(y);
+  func f2y=cos(x)*cos(y);
+  func f3x=cos(x);
+  func f3y=0;
+  // the metric on the sphere  $  M = DF^t DF $
+  func m11=f1x^2+f2x^2+f3x^2;
+  func m21=f1x*f1y+f2x*f2y+f3x*f3y;
+  func m22=f1y^2+f2y^2+f3y^2;
+  
+  func perio=[[4,y],[2,y],[1,x],[3,x]];  // to store the periodic condition 
+  
+  real hh=h/R;// hh  mesh size on unite sphere
+  real vv= 1/hh/hh;
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  int[int] ref=[0,L];  
+  
+  mesh3  ThS= movemesh23(Th,transfo=[f1*R+rx,f2*R+ry,f3*R+rz],orientation=orientation,refface=ref);
+  return ThS;
+}
+
+func mesh3 Ellipsoid(real rx, real ry, real rz, real a, real b, real c,real h,int L,int orientation)
+{
+  mesh  Th=square(25,50,[x*pi-pi/2,2*y*pi]);  //  $]\frac{-pi}{2},frac{-pi}{2}[\times]0,2\pi[ $
+  //  a parametrization of a sphere 
+  func f1 =cos(x)*cos(y);
+  func f2 =cos(x)*sin(y);
+  func f3 = sin(x);
+  //    partiel derivative 
+  func f1x=sin(x)*cos(y);   
+  func f1y=-cos(x)*sin(y);
+  func f2x=-sin(x)*sin(y);
+  func f2y=cos(x)*cos(y);
+  func f3x=cos(x);
+  func f3y=0;
+  // the metric on the sphere  $  M = DF^t DF $
+  func m11=f1x^2+f2x^2+f3x^2;
+  func m21=f1x*f1y+f2x*f2y+f3x*f3y;
+  func m22=f1y^2+f2y^2+f3y^2;
+  
+  func perio=[[4,y],[2,y],[1,x],[3,x]];  // to store the periodic condition 
+  
+  real R = sqrt(a^2+b^2+c^2);
+  real hh=h/R;// hh  mesh size on unite sphere
+  real vv= 1/hh/hh;
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+  int[int] ref=[0,L];  
+  
+  mesh3  ThS= movemesh23(Th,transfo=[f1*a+rx,f2*b+ry,f3*c+rz],orientation=orientation,refface=ref);
+  return ThS;
+}
+
+// mesh3 eMesh = Ellipsoid(0.5, 0.5, 0.5, 0.2, 0.3, 0.4, 0.1, 7, 1);
+// plot(eMesh, wait=1);
+
+
+
+func mesh3 Hex(real ox, real oy, real oz, 
+                real xlen, real ylen, real zlen, 
+                int xgrid, int ygrid, int zgrid)
+{
+	mesh Th = square(xgrid, ygrid, [(xlen-ox)*x + ox, (ylen-oy)*y + oy]);
+	int[int] rup = [0, 5], rdown=[0, 6];
+	mesh3 Th3= buildlayers(Th, zgrid, zbound=[oz, oz+zlen], labelup=rup, labeldown=rdown);
+ 	return Th3;
+}
+/*
+mesh3 HomoTh = Hex(0, 0, 0, 20, 4, 4, 40, 10, 10);
+plot(HomoTh, wait=1);
+*/
+
+func mesh3 HCube2(int nGrid)
+{
+	
+ 	int[int] N=[nGrid, nGrid, nGrid];
+ 	real[int ,int] B = [[0, 1], [0, 1], [0, 1]];
+ 	int[int, int] L = [[1, 2], [3, 4], [5, 6]];
+ 	mesh3 Th = SurfaceHex(N, B, L, 1);
+ 	real[int] domain = [0.5, 0.5, 0.5, 10, 0.0001];
+ 	mesh3 HomoTh = tetg(Th, switch="paAAQYY", nbofregions=1, regionlist=domain);
+ 	return HomoTh;
+}
+
+ //mesh3 HomoTh=HCube2(25);
+// savemesh(HomoTh, "HomoTh3D.mesh");
+//plot(HomoTh, wait=1);

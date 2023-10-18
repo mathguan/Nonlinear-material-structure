@@ -1,0 +1,89 @@
+//HalfBall3D.edp
+load "msh3"
+load "medit"
+load "tetgen"
+load "freeyams"
+//include "../MeshFunc3D.edp"
+//
+//mesh3 ThHalfSphere = HalfSphere(0, 0, 0, 1, 0.04, 10, 1);
+//plot(ThHalfSphere, wait=1);
+////medit("HalfSphere", Ths);
+//border Circle(t=0, 2*pi){x = cos(t); y = sin(t);}
+//
+//mesh ThCircle = buildmesh(Circle(100));
+//mesh3 ThCircle23 = movemesh23(ThCircle, transfo=[x, 0, y]);
+//mesh3 FinalTh = ThHalfSphere + ThCircle23;
+//mesh3 Th3 = freeyams(FinalTh, hmax=0.05);
+//Th3 = tetg(Th3, switch="paAAQYY");
+////plot(FinalTh, wait=1);
+////plot(Th3, wait=1);
+//plot(Th3, wait=1);
+//savemesh(Th3, "halfShere3D.mesh");
+
+//savemesh(FinalHalfSphere, "halfSphere3D.mesh");
+
+//real[int] isometric(FinalHalfSphere.nv);
+//
+//for(int i = 0; i < FinalHalfSphere.nv; i++)
+//{
+//	isometric[i] = 0.17;
+//}
+//
+//mesh3 Th3 = mmg3d(FinalHalfSphere, memory=100, metric=isometric);
+//plot(Th3, wait=1);
+//
+//mesh3 Th3 = freeyams(FinalHalfSphere, hmax=0.14);
+
+//指定网格尺寸
+int nGrid = 10;
+
+//球心
+real rx = 0.0;
+real ry = 0.0;
+real rz = 0.0;
+
+//球半径
+real R = 1;
+
+
+mesh  Th=square(nGrid, nGrid,[x*pi-pi/2,y*pi]);    //[-pi/2,pi/2]x[0, pi]
+
+//球坐标变换 
+func f1 =cos(x)*cos(y);
+func f2 =cos(x)*sin(y);
+func f3 = sin(x);
+
+//指定面编号
+int[int] ref=[0, 10];  
+real maxVol = (1./nGrid)^3/6;
+//构造半球面  
+mesh3  ThS= movemesh23(Th,transfo=[f1*R+rx,f2*R+ry,f3*R+rz], orientation=1, refface=ref);
+plot(ThS, wait=1);
+//ThS = freeyams(ThS, hmax=1.5/nGrid);
+
+border Circle(t=0, 2*pi){x = cos(t); y = sin(t);}
+
+mesh ThCircle2 = buildmesh(Circle(2*nGrid));
+mesh3 ThCircle3 = movemesh23(ThCircle2, transfo=[x, 0, y]);
+
+mesh3 ThHalfSphere = ThS + ThCircle3;
+plot(ThHalfSphere, wait=1);
+
+//ThHalfSphere = freeyams(ThHalfSphere);
+//plot(ThHalfSphere, wait=1);
+//savemesh(ThHalfSphere, "ThHalfSphereSurface.mesh");
+
+//real[int] domain = [0.01, 0.01, 0.01, 53, maxVol];
+//ThHalfSphere = tetg(ThHalfSphere, switch="paAAQYY", nbofregions=1, regionlist=domain);
+////plot(ThHalfSphere, wait=1);
+////medit("ThHalfSphere", ThHalfSphere);
+//savemesh(ThHalfSphere, "ThHalfSphere.mesh");
+//mesh3 cylinder = buildlayers(ThCircle2, 10, zbound=[0, 10]);
+//plot(cylinder, wait=1);
+
+
+
+//cylinder = movemesh3(cylinder, transfo=[x, -10, y]);
+//plot(cylinder, wait=1);
+//mesh3 final = cylinder + ThHalfSphere;
+//plot(final, wait=1);

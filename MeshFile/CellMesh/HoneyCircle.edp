@@ -1,0 +1,44 @@
+border C1(t=84, 142){x=t; y=0; label=1;}
+border C2(t=pi, pi/2){x=226+84*cos(t); y=84*sin(t); label=50;}
+border C3(t=84, 226*sqrt(3)-84){x=226; y=t; label=2;}
+border C4(t=3*pi/2, pi){x=226+84*cos(t); y=226*sqrt(3)+84*sin(t); label=50;}
+border C5(t=142, 84){x=t;y=226*sqrt(3);label=3;}
+border C6(t=0, -pi/2){x=84*cos(t); y=226*sqrt(3)+84*sin(t);label=50;}
+border C7(t=226*sqrt(3)-84, 84){x=0; y=t; label=4;}
+border C8(t=pi/2, 0){x=84*cos(t); y=84*sin(t); label=50;}
+border C0(t=0, 2*pi){x=113+84*cos(t); y=113*sqrt(3)+84*sin(t); label=50;}
+
+cout << 226*sqrt(3)-84 << endl;
+//plot(C1(58)+C2(132)+C3(223)+C4(132)+C5(58)+C6(132)+C7(223)+C8(132)+C0(-528));
+real rM = 0.1;
+int nC = 42*pi*rM;
+int nL1 = 58*rM;
+int nL2 = (226*sqrt(3)-168)*rM;
+mesh BasicTh = buildmesh(C1(nL1)+C2(nC)+C3(nL2)+C4(nC)+C5(nL1)+C6(nC)+C7(nL2)+C8(nC)+C0(-4*nC));
+plot(BasicTh, wait=1);
+
+    real shiftX = 226;
+    real shiftY = 226*sqrt(3);
+int n = 8;
+//	BasicTh = movemesh(BasicTh,[x*epsilonX, y*epsilonY]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [shiftX*i+x, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	    //plot(Th0, wait=1);
+	 }	 
+ 	 mesh ThTemp = Th0;
+ 	 L1[0] = 3;L2[0] = 1;
+      for(int i=1; i < n; i++)
+      {
+		 mesh Th1 = movemesh(ThTemp, [x, y + shiftY * i]);
+ 		 Th0 = change(Th0, label = L1);
+ 		 Th1 = change(Th1, label = L2);
+ 		 Th0 = Th0 +Th1;	
+ 	}
+ 	
+plot(Th0, wait=1);

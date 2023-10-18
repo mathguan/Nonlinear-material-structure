@@ -1,0 +1,104 @@
+load "msh3"
+load "tetgen"
+load "medit"
+//include "CellMeshFunc.edp"
+//include "../HomoMesh/HomoMeshFunc.edp"
+include "../MeshFile/MeshFunc2D.edp"
+include "../MeshFile/HomoMesh/HomoMeshFunc.edp"
+
+real nGrid = 20;
+real h = 0.2;
+mesh Th = square(nGrid, nGrid, [x, h*y]);
+//plot(Th, wait=1);
+
+real radius1 = 0.1;
+real rx1 = 0.5, ry1 = 0.25;
+
+mesh3 cylinder1 = movemesh23(Th, transfo=[rx1 + radius1*cos(2*pi*y/h)+0.3*sin(2*pi*x), ry1 + radius1*sin(2*pi*y/h), x]);
+plot(cylinder1, wait=1);
+
+real radius2 = 0.1;
+real rx2 = 0.5, ry2 = 0.75;
+
+mesh3 cylinder2 = movemesh23(Th, transfo=[rx2 + radius2*cos(2*pi*y/h)-0.3*sin(2*pi*x), ry2 + radius2*sin(2*pi*y/h), x]);
+plot(cylinder2, wait=1);
+
+mesh Th2Top = CCircle2Holes(rx1, ry1, radius1, rx2, ry2, radius2, nGrid);
+plot(Th2Top, wait=1);
+// 
+border Circle1(t=0, 2*pi){x = rx1 + radius1*cos(t); y = ry1 + radius1*sin(t);}
+border Circle2(t=0, 2*pi){x = rx2 + radius2*cos(t); y = ry2 + radius2*sin(t);}
+mesh Th2Circle1 = buildmesh(Circle1(nGrid));
+mesh Th2Circle2 = buildmesh(Circle2(nGrid));
+
+mesh3 Th3Buttom = movemesh23(Th2Top, transfo=[x, y, 0]);
+mesh3 Th3ButtomCircle1 = movemesh23(Th2Circle1, transfo=[x, y, 0]);
+mesh3 Th3ButtomCircle2 = movemesh23(Th2Circle2, transfo=[x, y, 0]);
+mesh3 Th3Final = cylinder1 + cylinder2 + Th3Buttom + Th3ButtomCircle1 + Th3ButtomCircle2;
+
+plot(Th3Final, wait=1);
+
+mesh3 Th3Top = movemesh23(Th2Top, transfo=[x, y, 1]);
+mesh3 Th3TopCircle1 = movemesh23(Th2Circle1, transfo=[x, y, 1]);
+mesh3 Th3TopCircle2 = movemesh23(Th2Circle2, transfo=[x, y, 1]);
+Th3Final = Th3Final + Th3Top + Th3TopCircle1 + Th3TopCircle2;
+
+plot(Th3Final, wait=1);
+
+mesh3 Th3Left = movemesh23(Th2Top, transfo=[x, 0, y]);
+mesh3 Th3LeftCircle1 = movemesh23(Th2Circle1, transfo=[x, 0, y]);
+mesh3 Th3LeftCircle2 = movemesh23(Th2Circle2, transfo=[x, 0, y]);
+
+Th3Final = Th3Final + Th3Left + Th3LeftCircle1 + Th3LeftCircle2;
+
+plot(Th3Final, wait=1);
+
+mesh3 Th3Right = movemesh23(Th2Top, transfo=[x, 1, y]);
+mesh3 Th3RightCircle1 = movemesh23(Th2Circle1, transfo=[x, 1, y]);
+mesh3 Th3RightCircle2 = movemesh23(Th2Circle2, transfo=[x, 1, y]);
+
+Th3Final = Th3Final + Th3Right + Th3RightCircle1 + Th3RightCircle2;
+
+plot(Th3Final, wait=1);
+
+real radius3 = 0.1;
+real rx3 = 0.5;
+real ry3 = 0.25;
+mesh3 cylinder3 = movemesh23(Th, transfo=[rx3 + radius1*cos(2*pi*y/h), x, ry3 + radius1*sin(2*pi*y/h)]);
+plot(cylinder3, wait=1);
+Th3Final = Th3Final + cylinder3;
+plot(Th3Final, wait=1);
+
+real radius4 = 0.1;
+real rx4 = 0.5, ry4 = 0.75;
+mesh3 cylinder4 = movemesh23(Th, transfo=[rx4 + radius2*cos(2*pi*y/h), x, ry4 + radius2*sin(2*pi*y/h)]);
+plot(cylinder4, wait=1);
+Th3Final = Th3Final + cylinder4;
+plot(Th3Final, wait=1);
+
+mesh Th2Left = Rectangle(1, 2, 3, 4, nGrid);
+
+mesh3 Th3Back = movemesh23(Th2Left, transfo=[0, x, y]);
+mesh3 Th3Front = movemesh23(Th2Left, transfo=[1, x, y]);
+Th3Final = Th3Final + Th3Back + Th3Front;
+plot(Th3Final, wait=1);
+
+real[int] domain = [0.01, 0.01, 0.01, 1, 0.00005, rx1, ry1, 0.01, 12, 0.001, rx2, ry2, 0.01, 13, 0.001,
+                   rx3, 0.01, ry3, 14, 0.001, rx4, 0.01, ry4, 15, 0.001];
+mesh3 CellTh = tetg(Th3Final, switch="paAAQY", nbofregions = 5, regionlist=domain);
+int RM1 = CellTh(0.01, 0.01, 0.01).region;
+int RM2 = CellTh(rx1, ry1, 0.01).region;
+int RM3 = CellTh(rx2, ry2, 0.01).region;
+int RM4 = CellTh(rx3, 0.01, ry3).region;
+int RM5 = CellTh(rx4, 0.01, ry4).region;
+//savemesh(CellTh, "weave3mesh3D.mesh");
+plot(CellTh, wait=1);
+cout << "RM1 = " << RM1 << endl;
+cout << "RM2 = " << RM2 << endl;
+cout << "RM3 = " << RM3 << endl;
+cout << "RM4 = " << RM4 << endl;
+cout << "RM5 = " << RM5 << endl;
+//medit("CellTh", CellTh);
+savemesh(CellTh, "fibire2.mesh");
+cout << "CellTh.nv = " << CellTh.nv << endl;
+cout << "CellTh.nt = " << CellTh.nt << endl;

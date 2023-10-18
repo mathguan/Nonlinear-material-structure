@@ -1,0 +1,36 @@
+//*****************************************************************
+//均匀化计算所需二维网格文件,区域为孔洞区域,材料为各向同性
+// 单胞为[0,1]x[0,1],
+// 内部孔洞区域为[M2x, M2y]x[M2x+M2Width, M2y+M2Height]
+
+//文件提供两套网格
+//CellVh: 单胞网格
+//HomoVh:均匀化网格
+mesh CellTh;
+{
+    //内部孔洞位置
+    real M2x = 0.25;
+    real M2y = 0.25;
+    real M2Width = 0.5;
+    real M2Height = 0.5;
+
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+	border C11(t=0, 1) {x=M2x+M2Width*t; y=M2y;label=5;}
+	border C12(t=0, 1) {x=M2x+M2Width; y=M2y+M2Height*t;label=6;}
+	border C13(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;label=7;}
+	border C14(t=0, 1) {x=M2x; y=M2y+M2Height-M2Height*t;label=8;}
+
+	//边界上网格划分段数
+	int nGrid0 = 128;
+	int nGrid1 = -64;
+	
+	CellTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+    	              +C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+}
+//*****************************************************************

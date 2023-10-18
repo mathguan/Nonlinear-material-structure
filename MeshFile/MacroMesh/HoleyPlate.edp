@@ -1,0 +1,36 @@
+include "MacroMeshfunc.edp"
+load "msh3"
+load "tetgen"
+
+mesh MacroTh = MacroMeshHoneyComb(8, 1, 0.2, 10, 2);
+plot(MacroTh, wait=1);
+int nz = 10;
+int[int] rup=[0, 5], rdown=[0, 6];
+mesh3 HoneyStructureTh = buildlayers(MacroTh, nz, zbound=[0, 0.5], labelup=rup, labeldown=rdown);
+plot(HoneyStructureTh, wait=1);
+
+/*
+mesh MacroTh = MacroMeshDiamondHoleABA(8, 0.45, 20);
+plot(MacroTh, wait=1);
+int nz = 10;
+int[int] rup=[0, 5], rdown=[0, 6];
+mesh3 DiamondHoleABATh = buildlayers(MacroTh, nz, zbound=[0, 0.1], labelup=rup, labeldown=rdown);
+plot(DiamondHoleABATh, wait=1);
+*/
+
+/*
+mesh MacroTh = MacroMeshRectangleHoleABA(8, 0.4, 10);
+plot(MacroTh, wait=1);
+int nz = 10;
+int[int] rup=[0, 5], rdown=[0, 6];
+mesh3 RectangleHoleABATh = buildlayers(MacroTh, nz, zbound=[0, 0.1], labelup=rup, labeldown=rdown);
+plot(RectangleHoleABATh, wait=1);
+*/
+/*
+mesh MacroTh = MacroMeshCircleHoleABA(8, 0.3, 5);
+plot(MacroTh, wait=1);
+int nz = 10;
+int[int] rup=[0, 5], rdown=[0, 6];
+mesh3 CircleHoleABATh = buildlayers(MacroTh, nz, zbound=[0, 0.1], labelup=rup, labeldown=rdown);
+plot(CircleHoleABATh, wait=1);
+*/

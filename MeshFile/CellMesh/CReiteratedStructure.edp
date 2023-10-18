@@ -1,0 +1,207 @@
+border C01(t=0, 1) {x=t; y=0;label=1;}
+border C02(t=0, 1) {x=1; y=t;label=2;}
+border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+border C11(t=0.1, 0.9){x=t; y=0.1;label=10;}
+border C12(t=0.1, 0.9){x=0.9; y=t;label=10;}
+border C13(t=0.9, 0.1){x=t; y=0.9;label=10;}
+border C14(t=0.9, 0.1){x=0.1; y=t;label=10;}
+//-----------------------------------------------------------------
+real orX1 = 0.12;
+real orY1 = 0.12;
+border D11(t=orX1, orX1+0.16){x=t; y=orY1; label=11;}
+border D12(t=orY1, orY1+0.16){x=orX1+0.16; y=t; label=11;}
+border D13(t=orX1+0.16, orX1){x=t; y=orY1+0.16; label=11;}
+border D14(t=orY1+0.16, orY1){x=orX1; y=t; label=11;}
+
+real orX2 = orX1 +  0.2;
+real orY2 = orY1;
+border D21(t=orX2, orX2+0.16){x=t; y=orY2; label=21;}
+border D22(t=orY2, orY2+0.16){x=orX2+0.16; y=t; label=21;}
+border D23(t=orX2+0.16, orX2){x=t; y=orY2+0.16; label=21;}
+border D24(t=orY2+0.16, orY2){x=orX2; y=t; label=21;}
+
+real orX3 = orX2 +  0.2;
+real orY3 = orY2;
+border D31(t=orX3, orX3+0.16){x=t; y=orY3; label=31;}
+border D32(t=orY3, orY3+0.16){x=orX3+0.16; y=t; label=31;}
+border D33(t=orX3+0.16, orX3){x=t; y=orY3+0.16; label=31;}
+border D34(t=orY3+0.16, orY3){x=orX3; y=t; label=31;}
+
+real orX4 = orX3 +  0.2;
+real orY4 = orY3;
+border D41(t=orX4, orX4+0.16){x=t; y=orY4; label=41;}
+border D42(t=orY4, orY4+0.16){x=orX4+0.16; y=t; label=41;}
+border D43(t=orX4+0.16, orX4){x=t; y=orY4+0.16; label=41;}
+border D44(t=orY4+0.16, orY4){x=orX4; y=t; label=41;}
+//-----------------------------------------------------------------
+real orX5 = orX1;
+real orY5 = orY1 + 0.2;
+border D51(t=orX5, orX5+0.16){x=t; y=orY5; label=51;}
+border D52(t=orY5, orY5+0.16){x=orX5+0.16; y=t; label=51;}
+border D53(t=orX5+0.16, orX5){x=t; y=orY5+0.16; label=51;}
+border D54(t=orY5+0.16, orY5){x=orX5; y=t; label=51;}
+
+real orX6 = orX2;
+real orY6 = orY2 + 0.2;
+border D61(t=orX6, orX6+0.16){x=t; y=orY6; label=61;}
+border D62(t=orY6, orY6+0.16){x=orX6+0.16; y=t; label=61;}
+border D63(t=orX6+0.16, orX6){x=t; y=orY6+0.16; label=61;}
+border D64(t=orY6+0.16, orY6){x=orX6; y=t; label=61;}
+
+real orX7 = orX3;
+real orY7 = orY3 + 0.2;
+border D71(t=orX7, orX7+0.16){x=t; y=orY7; label=71;}
+border D72(t=orY7, orY7+0.16){x=orX7+0.16; y=t; label=71;}
+border D73(t=orX7+0.16, orX7){x=t; y=orY7+0.16; label=71;}
+border D74(t=orY7+0.16, orY7){x=orX7; y=t; label=71;}
+
+real orX8 = orX4;
+real orY8 = orY4 + 0.2;
+border D81(t=orX8, orX8+0.16){x=t; y=orY8; label=81;}
+border D82(t=orY8, orY8+0.16){x=orX8+0.16; y=t; label=81;}
+border D83(t=orX8+0.16, orX8){x=t; y=orY8+0.16; label=81;}
+border D84(t=orY8+0.16, orY8){x=orX8; y=t; label=81;}
+//-----------------------------------------------------------------
+real orX9 = orX5;
+real orY9 = orY5 + 0.2;
+border D91(t=orX9, orX9+0.16){x=t; y=orY9; label=91;}
+border D92(t=orY9, orY9+0.16){x=orX9+0.16; y=t; label=91;}
+border D93(t=orX9+0.16, orX9){x=t; y=orY9+0.16; label=91;}
+border D94(t=orY9+0.16, orY9){x=orX9; y=t; label=91;}
+
+real orX10 = orX6;
+real orY10 = orY6 + 0.2;
+border D101(t=orX10, orX10+0.16){x=t; y=orY10; label=101;}
+border D102(t=orY10, orY10+0.16){x=orX10+0.16; y=t; label=101;}
+border D103(t=orX10+0.16, orX10){x=t; y=orY10+0.16; label=101;}
+border D104(t=orY10+0.16, orY10){x=orX10; y=t; label=101;}
+
+real orX11 = orX7;
+real orY11 = orY7 + 0.2;
+border D111(t=orX11, orX11+0.16){x=t; y=orY11; label=111;}
+border D112(t=orY11, orY11+0.16){x=orX11+0.16; y=t; label=111;}
+border D113(t=orX11+0.16, orX11){x=t; y=orY11+0.16; label=111;}
+border D114(t=orY11+0.16, orY11){x=orX11; y=t; label=111;}
+
+real orX12 = orX8;
+real orY12 = orY8 + 0.2;
+border D121(t=orX12, orX12+0.16){x=t; y=orY12; label=121;}
+border D122(t=orY12, orY12+0.16){x=orX12+0.16; y=t; label=121;}
+border D123(t=orX12+0.16, orX12){x=t; y=orY12+0.16; label=121;}
+border D124(t=orY12+0.16, orY12){x=orX12; y=t; label=121;}
+//-----------------------------------------------------------------
+real orX13 = orX9;
+real orY13 = orY9 + 0.2;
+border D131(t=orX13, orX13+0.16){x=t; y=orY13; label=131;}
+border D132(t=orY13, orY13+0.16){x=orX13+0.16; y=t; label=131;}
+border D133(t=orX13+0.16, orX13){x=t; y=orY13+0.16; label=131;}
+border D134(t=orY13+0.16, orY13){x=orX13; y=t; label=131;}
+
+real orX14 = orX10;
+real orY14 = orY10 + 0.2;
+border D141(t=orX14, orX14+0.16){x=t; y=orY14; label=141;}
+border D142(t=orY14, orY14+0.16){x=orX14+0.16; y=t; label=141;}
+border D143(t=orX14+0.16, orX14){x=t; y=orY14+0.16; label=141;}
+border D144(t=orY14+0.16, orY14){x=orX14; y=t; label=141;}
+
+real orX15 = orX11;
+real orY15 = orY11 + 0.2;
+border D151(t=orX15, orX15+0.16){x=t; y=orY15; label=151;}
+border D152(t=orY15, orY15+0.16){x=orX15+0.16; y=t; label=151;}
+border D153(t=orX15+0.16, orX15){x=t; y=orY15+0.16; label=151;}
+border D154(t=orY15+0.16, orY15){x=orX15; y=t; label=151;}
+
+real orX16 = orX12;
+real orY16 = orY12 + 0.2;
+border D161(t=orX16, orX16+0.16){x=t; y=orY16; label=161;}
+border D162(t=orY16, orY16+0.16){x=orX16+0.16; y=t; label=161;}
+border D163(t=orX16+0.16, orX16){x=t; y=orY16+0.16; label=161;}
+border D164(t=orY16+0.16, orY16){x=orX16; y=t; label=161;}
+
+// plot(C01(100) + C02(100) + C03(100) + C04(100)
+//     +C11(80) + C12(80) + C13(80) + C14(80)
+//     +D11(16) + D12(16) + D13(16) + D14(16)
+//     +D21(16) + D22(16) + D23(16) + D24(16)
+//     +D31(16) + D32(16) + D33(16) + D34(16)
+//     +D41(16) + D42(16) + D43(16) + D44(16)
+//     +D51(16) + D52(16) + D53(16) + D54(16)
+//     +D61(16) + D62(16) + D63(16) + D64(16)
+//     +D71(16) + D72(16) + D73(16) + D74(16)
+//     +D81(16) + D82(16) + D83(16) + D84(16)
+//     +D91(16) + D92(16) + D93(16) + D94(16)
+//     +D101(16) + D102(16) + D103(16) + D104(16)
+//     +D111(16) + D112(16) + D113(16) + D114(16)
+//     +D121(16) + D122(16) + D123(16) + D124(16)
+//     +D131(16) + D132(16) + D133(16) + D134(16)
+//     +D141(16) + D142(16) + D143(16) + D144(16)
+//     +D151(16) + D152(16) + D153(16) + D154(16)
+//     +D161(16) + D162(16) + D163(16) + D164(16));
+    
+mesh CellTh = buildmesh(C01(100) + C02(100) + C03(100) + C04(100)
+    +C11(80) + C12(80) + C13(80) + C14(80)
+    +D11(16) + D12(16) + D13(16) + D14(16)
+    +D21(16) + D22(16) + D23(16) + D24(16)
+    +D31(16) + D32(16) + D33(16) + D34(16)
+    +D41(16) + D42(16) + D43(16) + D44(16)
+    +D51(16) + D52(16) + D53(16) + D54(16)
+    +D61(16) + D62(16) + D63(16) + D64(16)
+    +D71(16) + D72(16) + D73(16) + D74(16)
+    +D81(16) + D82(16) + D83(16) + D84(16)
+    +D91(16) + D92(16) + D93(16) + D94(16)
+    +D101(16) + D102(16) + D103(16) + D104(16)
+    +D111(16) + D112(16) + D113(16) + D114(16)
+    +D121(16) + D122(16) + D123(16) + D124(16)
+    +D131(16) + D132(16) + D133(16) + D134(16)
+    +D141(16) + D142(16) + D143(16) + D144(16)
+    +D151(16) + D152(16) + D153(16) + D154(16)
+    +D161(16) + D162(16) + D163(16) + D164(16));
+int[int] R1(36);
+R1[0] = CellTh(0.01, 0.01).region;
+R1[1] = 0;
+R1[2] = CellTh(0.11, 0.11).region;
+R1[3] = 4;
+for(int i = 0; i < 16; i++)
+{
+	R1[i*2 + 4] = CellTh(0.2 + i%4 *0.2, 0.2 + i/4* 0.2).region;
+	R1[i*2 + 5] = 8;
+}
+CellTh = change(CellTh, region=R1);
+plot(CellTh, wait=1);
+
+mesh MacroTh = CellTh;
+int[int] L1 = [2, 0], L2 = [4, 0];
+for(int i = 1; i < 4; i++)
+{
+	mesh Th1 = movemesh(CellTh, [x+i, y]);
+	MacroTh = change(MacroTh, label = L1);
+	Th1 = change(Th1, label = L2);
+	MacroTh = MacroTh +Th1;
+}
+
+mesh ThTemp = MacroTh;
+L1[0] = 3;L2[0] = 1;
+for(int i=1; i < 4; i++)
+{
+	mesh Th1 = movemesh(ThTemp, [x, y+i]);
+	MacroTh = change(MacroTh, label = L1);
+	Th1 = change(Th1, label = L2);
+	MacroTh = MacroTh +Th1;	
+}
+
+plot(MacroTh, wait=1);
+cout << "MacroTh.nv = " << MacroTh.nv << endl;
+cout << "MacroTh.nt = " << MacroTh.nt << endl;
+
+fespace MacroVh(MacroTh, P1);
+fespace MacroVh0(MacroTh, P0);
+MacroVh0 a = 1 * (region==0) + 0.01*(region==4) + 0.0001*(region==8);
+MacroVh u, v;
+func f = 10;
+solve Possion(u, v) = 
+     int2d(MacroTh)(a*(dx(u)*dx(v) + dy(u)*dy(v)))
+    -int2d(MacroTh)(f*v)
+    +on(1, 2, 3, 4, u=0);
+
+plot(u, wait=1, fill=1, value=1, boundary = false);

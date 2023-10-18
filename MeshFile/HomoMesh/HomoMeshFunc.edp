@@ -1,0 +1,236 @@
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//均匀化计算所需二维均匀化网格文件，
+//均匀化区域为[0,1]x[0,1]
+
+//文件网格
+//HomoVh:均匀化网格
+func mesh Rectangle(int buttom, int right, int top, int left, int nGrid0)
+{
+	//边界
+	border C01(t=0, 1) {x=t;     y=0;  label=buttom;}
+	border C02(t=0, 1) {x=1;     y=t;  label=right;}
+	border C03(t=0, 1) {x=(1-t); y=1;  label=top;}
+	border C04(t=0, 1) {x=0;     y=1-t;label=left;}
+	
+	mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0));
+	return Th;
+}
+
+/*矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：Rectangle2(real originX, real originY, real width, real height,
+                     int buttom, int right, int top, int left, int nGrid0)
+变量说明：
+    originX  -- 矩形左下角X坐标 
+    originY  -- 矩形左下角Y坐标
+    width    -- 矩形宽度(x方向长度) 
+    height   -- 矩形式高度(y方向长度)
+    buttom   -- 矩形底边编号
+    right    -- 矩形右边编号
+    top      -- 矩形顶边编号
+    left     -- 矩形左边编号
+*/
+
+func mesh Rectangle2(real originX, real originY,real width, real height, 
+                    int buttom, int right, int top, int left, int nGrid1, int nGrid2)
+{
+	
+	//边界
+	border C01(t=0, 1) {x=originX+width*t;     y=originY;             label = buttom;}
+	border C02(t=0, 1) {x=originX+width;       y=originY+height*t;    label = right;}
+	border C03(t=0, 1) {x=originX+width*(1-t); y=originY+height;      label = top;}
+	border C04(t=0, 1) {x=originX;             y=originY+height*(1-t);label = left;}
+	mesh Th = buildmesh(C01(nGrid1)+C02(nGrid2)+C03(nGrid1)+C04(nGrid2));
+	return Th;
+}
+/*
+mesh Th = Rectangle2(0, 0, 1, 1, 1, 2, 3, 4, 50, 50);
+cout << "Nodes: " << Th.nv << endl;
+cout << "Triangles: " << Th.nt << endl;
+plot(Th, wait=1);
+*/
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+func mesh LShape(int nGrid0)
+{
+    border M1(t=0,1){x=t; y=0;label=1;}
+    border M2(t=0,0.5){x=1;y=t; label=2;}
+    border M3(t=0,0.5){x=1-t; y=0.5;label=3;}
+    border M4(t=0,0.5){x=0.5; y=0.5+t; label=4;}
+    border M5(t=0,0.5){x=0.5-t; y=1; label=5;}
+    border M6(t=0,1){x=0; y=1-t;label=6;}
+    
+    //边界上网格划分段数
+	//int nGrid0 = 128;
+	int nGrid1 = nGrid0*0.5;
+	mesh ThL = buildmesh(M1(nGrid0)
+	                   +M2(nGrid1)+M3(nGrid1)+M4(nGrid1)+M5(nGrid1)
+	                   +M6(nGrid0));
+	return ThL;
+}
+/*
+mesh Th = LShape();
+plot(Th, wait=1);
+*/
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+func mesh TShape()
+{
+	border M1(t=0,0.375){x=t; y=0.5;label=1;}
+	border M2(t=0,0.5){x=0.375;y=0.5-t; label=2;}
+	border M3(t=0,0.25){x=0.375+t; y=0;label=3;}
+	border M4(t=0,0.5){x=0.625; y=t; label=4;}
+	border M5(t=0,0.375){x=0.625+t; y=0.5; label=5;}
+	border M6(t=0,0.5){x=1; y=0.5+t;label=6;}
+	border M7(t=0, 1) {x=1-t; y=1;label=7;}
+	border M8(t=0, 0.5) {x=0; y=1-t;label=8;}
+	
+    int nGrid0 = 128;
+	int nGrid1 = 64;
+	int nGrid2 = 32;
+	int nGrid3 = 48;
+	mesh ThT = buildmesh(M1(nGrid3)
+	                   +M2(nGrid1)
+	                   +M3(nGrid2)
+	                   +M4(nGrid1)
+	                   +M5(nGrid3)
+	                   +M6(nGrid1)
+	                   +M7(nGrid0)
+                       +M8(nGrid1));
+    return ThT;
+}
+/*
+mesh Th = TShape();
+plot(Th, wait=1);
+*/
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+func mesh CShape()
+{
+	//外边界
+	border M1(t=0,1){x=t; y=0;label=1;}
+	border M2(t=0,0.25){x=1;y=t; label=2;}
+	border M3(t=0,0.5){x=1-t; y=0.25;label=3;}
+	border M4(t=0,0.5){x=0.5; y=0.25+t; label=4;}
+	border M5(t=0,0.5){x=0.5+t; y=0.75; label=5;}
+	border M6(t=0,0.25){x=1; y=0.75+t;label=6;}
+	border M7(t=0, 1) {x=1-t; y=1;label=7;}
+	border M8(t=0, 1) {x=0; y=1-t;label=8;}
+	
+    int nGrid0 = 128;
+	int nGrid1 = 64;
+	int nGrid2 = 32;
+	mesh ThC = buildmesh(M1(nGrid0)
+	                   +M2(nGrid2)
+	                   +M3(nGrid1)
+	                   +M4(nGrid1)
+	                   +M5(nGrid1)
+	                   +M6(nGrid2)
+	                   +M7(nGrid0)
+	                   +M8(nGrid0));         
+	return ThC;
+}
+/*
+mesh Th = CShape();
+plot(Th, wait=1);
+*/
+
+// func mesh Rectangle8()
+// {
+// 	mesh Th0 = square(128, 16, [x, 0.125*y]);
+// 	int[int] L1 = [3,0], L2=[1,0];
+// 	for(int i=1; i < 8; i++)
+// 	{
+// 		mesh Th = square(128, 16, [x, 0.125*(y+i)]);
+// 		Th0 = change(Th0, label=L1);
+// 		Th = change(Th, label=L2);
+// 		Th0 = Th0 + Th;	
+// 	}
+// 	return Th0;
+// }
+
+
+// mesh Th = Rectangle8();
+// plot(Th, wait=1);
+// cout <<  "RM1 = " << Th(0.01, 0.01).region << endl;
+// cout <<  "RM2 = " << Th(0.01, 0.135).region << endl;
+// cout <<  "RM3 = " << Th(0.01, 0.26).region << endl;
+// cout <<  "RM4 = " << Th(0.01, 0.385).region << endl;
+// cout <<  "RM5 = " << Th(0.01, 0.51).region << endl;
+// cout <<  "RM6 = " << Th(0.01, 0.635).region << endl;
+// cout <<  "RM7 = " << Th(0.01, 0.76).region << endl;
+// cout <<  "RM8 = " << Th(0.01, 0.885).region << endl;
+
+/*
+均匀化计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+*/
+func mesh RadiativeHomoMesh(int n, int nWidth, int nHeight)
+{
+    real epsilon = 1./n;
+    //BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+    //网格，并将其合成为新网格
+    mesh BasicTh = square(nWidth, nHeight, [epsilon*x, epsilon*y]);
+
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    int[int] R1 = [0, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    R1[1] = i;
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2, region=R1);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     R1.resize(n*2);
+     for(int i = 0; i < n; i++)
+     {
+	     R1[2*i] = i;
+	 }
+	 
+     for(int i=1; i < n; i++)
+     {
+	     for(int j = 0; j < n; j++)
+	     {
+		     R1[2*j+1] = n * i + j;
+		 }
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2, region=R1);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+/*
+int n = 8;
+mesh HomoTh = RadiativeHomoMesh(n, 10, 10);
+cout << "Nodes: " << HomoTh.nv << endl;
+cout << "Triangles: " << HomoTh.nt << endl;
+cout << "The Region Number: " << endl;
+for(int i = 0; i < n; i++)
+{
+	for(int j = 0; j < n; j++)
+	{
+		cout << HomoTh((0.01 + j)/n, (0.01 + i)/n).region << " ";
+	}
+	cout << endl;
+}
+
+plot(HomoTh, wait=1);
+*/
+//savemesh(Th0, "RadiativeMesh.msh");

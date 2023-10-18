@@ -1,0 +1,110 @@
+//****************************************************************************************************************
+//网格定义
+//孔洞材料的宏观有限元网格
+//区域为[0,1]x[0,1],当中包含8x8个周期排列的圆形孔洞,材料为各向同性材料
+
+//文件给出网格
+//MacroTh
+
+mesh MacroTh;
+
+{
+int n  = 8;
+real epsilon = 1./n;
+
+
+//外边界
+border C1(t=0, 1) {x=t; y=0;label=1;}
+border C2(t=0, 1) {x=1; y=t;label=2;}
+border C3(t=0, 1) {x=1-t; y=1;label=3;}
+border C4(t=0, 1) {x=0; y=1-t;label=4;}
+//圆形孔洞系数
+real rx = 0.5;
+real ry = 0.5;
+real radius = 0.5/sqrt(pi);
+//内部各材料边界
+border C811(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t))*epsilon; label = 811;}
+border C812(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t))*epsilon; label = 812;}
+border C813(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t))*epsilon; label = 813;}
+border C814(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t))*epsilon; label = 814;}
+border C815(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t))*epsilon; label = 815;}
+border C816(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t))*epsilon; label = 816;}
+border C817(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t))*epsilon; label = 817;}
+border C818(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t))*epsilon; label = 818;}
+
+border C821(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t)+1)*epsilon; label = 821;}
+border C822(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t)+1)*epsilon; label = 822;}
+border C823(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t)+1)*epsilon; label = 823;}
+border C824(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t)+1)*epsilon; label = 824;}
+border C825(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t)+1)*epsilon; label = 825;}
+border C826(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t)+1)*epsilon; label = 826;}
+border C827(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t)+1)*epsilon; label = 827;}
+border C828(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t)+1)*epsilon; label = 828;}
+
+border C831(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t)+2)*epsilon; label = 831;}
+border C832(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t)+2)*epsilon; label = 832;}
+border C833(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t)+2)*epsilon; label = 833;}
+border C834(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t)+2)*epsilon; label = 834;}
+border C835(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t)+2)*epsilon; label = 835;}
+border C836(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t)+2)*epsilon; label = 836;}
+border C837(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t)+2)*epsilon; label = 837;}
+border C838(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t)+2)*epsilon; label = 838;}
+
+border C841(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t)+3)*epsilon; label = 841;}
+border C842(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t)+3)*epsilon; label = 842;}
+border C843(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t)+3)*epsilon; label = 843;}
+border C844(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t)+3)*epsilon; label = 844;}
+border C845(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t)+3)*epsilon; label = 845;}
+border C846(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t)+3)*epsilon; label = 846;}
+border C847(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t)+3)*epsilon; label = 847;}
+border C848(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t)+3)*epsilon; label = 848;}
+
+border C851(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t)+4)*epsilon; label = 851;}
+border C852(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t)+4)*epsilon; label = 852;}
+border C853(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t)+4)*epsilon; label = 853;}
+border C854(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t)+4)*epsilon; label = 854;}
+border C855(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t)+4)*epsilon; label = 855;}
+border C856(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t)+4)*epsilon; label = 856;}
+border C857(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t)+4)*epsilon; label = 857;}
+border C858(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t)+4)*epsilon; label = 858;}
+
+border C861(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t)+5)*epsilon; label = 861;}
+border C862(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t)+5)*epsilon; label = 862;}
+border C863(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t)+5)*epsilon; label = 863;}
+border C864(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t)+5)*epsilon; label = 864;}
+border C865(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t)+5)*epsilon; label = 865;}
+border C866(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t)+5)*epsilon; label = 866;}
+border C867(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t)+5)*epsilon; label = 867;}
+border C868(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t)+5)*epsilon; label = 868;}
+
+border C871(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t)+6)*epsilon; label = 871;}
+border C872(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t)+6)*epsilon; label = 872;}
+border C873(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t)+6)*epsilon; label = 873;}
+border C874(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t)+6)*epsilon; label = 874;}
+border C875(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t)+6)*epsilon; label = 875;}
+border C876(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t)+6)*epsilon; label = 876;}
+border C877(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t)+6)*epsilon; label = 877;}
+border C878(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t)+6)*epsilon; label = 878;}
+
+border C881(t=0,2*pi){x=(rx+radius*cos(t))*epsilon;   y=(ry + radius*sin(t)+7)*epsilon; label = 881;}
+border C882(t=0,2*pi){x=(rx+radius*cos(t)+1)*epsilon; y=(ry + radius*sin(t)+7)*epsilon; label = 882;}
+border C883(t=0,2*pi){x=(rx+radius*cos(t)+2)*epsilon; y=(ry + radius*sin(t)+7)*epsilon; label = 883;}
+border C884(t=0,2*pi){x=(rx+radius*cos(t)+3)*epsilon; y=(ry + radius*sin(t)+7)*epsilon; label = 884;}
+border C885(t=0,2*pi){x=(rx+radius*cos(t)+4)*epsilon; y=(ry + radius*sin(t)+7)*epsilon; label = 885;}
+border C886(t=0,2*pi){x=(rx+radius*cos(t)+5)*epsilon; y=(ry + radius*sin(t)+7)*epsilon; label = 886;}
+border C887(t=0,2*pi){x=(rx+radius*cos(t)+6)*epsilon; y=(ry + radius*sin(t)+7)*epsilon; label = 887;}
+border C888(t=0,2*pi){x=(rx+radius*cos(t)+7)*epsilon; y=(ry + radius*sin(t)+7)*epsilon; label = 888;}
+
+int nGrid0=128;
+int n1 = -32;
+MacroTh = buildmesh(C1(nGrid0)+C2(nGrid0)+C3(nGrid0)+C4(nGrid0)
+                        +C811(n1)+C812(n1)+C813(n1)+C814(n1)+C815(n1)+C816(n1)+C817(n1)+C818(n1)
+                        +C821(n1)+C822(n1)+C823(n1)+C824(n1)+C825(n1)+C826(n1)+C827(n1)+C828(n1)
+                        +C831(n1)+C832(n1)+C833(n1)+C834(n1)+C835(n1)+C836(n1)+C837(n1)+C838(n1)                           
+                        +C841(n1)+C842(n1)+C843(n1)+C844(n1)+C845(n1)+C846(n1)+C847(n1)+C848(n1)
+                        +C851(n1)+C852(n1)+C853(n1)+C854(n1)+C855(n1)+C856(n1)+C857(n1)+C858(n1)                           
+                        +C861(n1)+C862(n1)+C863(n1)+C864(n1)+C865(n1)+C866(n1)+C867(n1)+C868(n1)
+                        +C871(n1)+C872(n1)+C873(n1)+C874(n1)+C875(n1)+C876(n1)+C877(n1)+C878(n1)                           
+                        +C881(n1)+C882(n1)+C883(n1)+C884(n1)+C885(n1)+C886(n1)+C887(n1)+C888(n1));
+    //plot(MacroTh, wait=1);
+}

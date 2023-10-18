@@ -1,0 +1,21 @@
+load "Element_P3"
+border C11(t = 0, 4){x = t; y = (8.*t - sqrt(3825 - 225*t^2))/17.;label = 1;}
+border C12(t = 4, sqrt(17)){x = t; y = (8.*t - sqrt(3825 - 225*t^2))/17.;label = 1;}
+border C21(t = 4, 0){x = t; y = (8.*t + sqrt(3825 - 225*t^2))/17.;label = 1;}
+border C22(t = sqrt(17), 4){x = t; y = (8.*t + sqrt(3825 - 225*t^2))/17.;label = 1;}
+border C31(t = -sqrt(17),-4){x = t; y = (-8.*t - sqrt(3825 - 225*t^2))/17.;label = 2;}
+border C32(t = -4, 0){x = t; y = (-8.*t - sqrt(3825 - 225*t^2))/17.;label = 2;}
+border C41(t = -4, -sqrt(17)){x = t; y = (-8.*t + sqrt(3825 - 225*t^2))/17.;label = 2;}
+border C42(t = 0, -4){x = t; y = (-8.*t + sqrt(3825 - 225*t^2))/17.;label = 2;}
+
+mesh heartTh = buildmesh(C11(20)+C12(2)+C21(20)+C22(2)+C31(2)+C32(20)+C41(2)+C42(20));
+plot(heartTh, wait=1);
+
+fespace Vh(heartTh, P3);
+func f = 10;
+Vh u, v;
+solve possion(u, v) = 
+    int2d(heartTh)(dx(u)*dx(v)+ dy(u)*dy(v))
+   -int2d(heartTh)(f * v)
+   +on(1, 2, u = 0);
+plot(u, wait=1, fill=1, value=1);

@@ -1,0 +1,292 @@
+/*
+均匀化计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+*/
+//func mesh RadiativeHomoMesh(int n, int nWidth, int nHeight)
+//{
+//    real epsilon = 1./n;
+//    //BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+//    //网格，并将其合成为新网格
+//    mesh BasicTh = square(nWidth, nHeight, [epsilon*x, epsilon*y]);
+//
+//    mesh Th0 = BasicTh;
+//    int[int] L1 = [2, 0], L2 = [4, 0];
+//    int[int] R1 = [0, 0];
+//    for(int i = 1; i < n; i++)
+//    {
+//	    R1[1] = i;
+//	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+//	    Th0 = change(Th0, label = L1);
+//	    Th1 = change(Th1, label = L2, region=R1);
+//	    Th0 = Th0 +Th1;
+//	 }
+//	 
+//	 
+//	 mesh ThTemp = Th0;
+//	 L1[0] = 3;L2[0] = 1;
+//     R1.resize(n*2);
+//     for(int i = 0; i < n; i++)
+//     {
+//	     R1[2*i] = i;
+//	 }
+//	 
+//     for(int i=1; i < n; i++)
+//     {
+//	     for(int j = 0; j < n; j++)
+//	     {
+//		     R1[2*j+1] = n * i + j;
+//		 }
+//		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+//		 Th0 = change(Th0, label = L1);
+//		 Th1 = change(Th1, label = L2, region=R1);
+//		 Th0 = Th0 +Th1;	
+//	}
+////plot(Th0, wait=1);
+//    return Th0;
+//}
+/*
+mesh HomoTh = RadiativeHomoMesh(16, 10, 10);
+plot(HomoTh, wait=1);
+*/
+//savemesh(Th0, "RadiativeMesh.msh");
+
+/*
+均匀化计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHoleMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+*/
+func mesh RadiativeHoleMesh(int n, int nGrid0, 
+                           real M2x,
+                           real M2y,
+                           real M2Width,
+                           real M2Height)
+{
+    real epsilon = 1./n;
+    //BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+    //网格，并将其合成为新网格
+    
+    //内部孔洞位置
+
+
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+	border C11(t=0, 1) {x=M2x+M2Width*t; y=M2y;label=5;}
+	border C12(t=0, 1) {x=M2x+M2Width; y=M2y+M2Height*t;label=6;}
+	border C13(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;label=7;}
+	border C14(t=0, 1) {x=M2x; y=M2y+M2Height-M2Height*t;label=8;}
+
+	//边界上网格划分段数
+	int nGrid1 = int(nGrid0*M2Width)*(-1);
+	
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+	+C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+	//plot(BasicTh, wait=1);
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    int[int] R1 = [0, 0];
+    R1[0] = BasicTh(0.01, 0.01).region;
+    for(int i = 1; i < n; i++)
+    {
+	    R1[1] = i;
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2, region=R1);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     R1.resize(n*2);
+     for(int i = 0; i < n; i++)
+     {
+	     R1[2*i] = i;
+	 }
+	 
+     for(int i=1; i < n; i++)
+     {
+	     for(int j = 0; j < n; j++)
+	     {
+		     R1[2*j+1] = n * i + j;
+		 }
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * i]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2, region=R1);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+
+/*
+mesh HomoTh = RadiativeHoleMesh(8, 20, 0.1, 0.1, 0.8, 0.8);
+plot(HomoTh, wait=1);
+*/
+//savemesh(Th0, "RadiativeMesh.msh");
+
+/*
+均匀化计算所需二维均匀化网格文件
+矩形均匀化区域,可指定矩形大小并对矩阵边界编号
+函数：RadiativeHoleMesh(int n, int nWidth, int nHeight)
+函数说明：在[0, 1]x[0, 1]上生成n x n个带有孔洞的正方形的宏观网格，
+         各小正方形的网格为nWidth x nHeight的square
+         各小正方形编号从左到右，从下到上依次编号为
+         n * i + j, i = 0,...,n - 1, j = 0,...,n-1
+         外边界下，右，上，左依次编号为1, 2, 3, 4
+参数说明：
+       int n -- 一个方向上的正方形个数
+       int nWidth -- 小正方形x方向的网格数
+       int nHeight -- 小正方形y方向的网格数
+*/
+func mesh RadiativeHoleMesh2(int n, int nGrid0, 
+                           real M1x,
+                           real M1y,
+                           real M1Width,
+                           real M1Height,
+                           real M2x,
+                           real M2y,
+                           real M2Width,
+                           real M2Height)
+{
+    real epsilon = 1./n;
+    
+    
+    //内部孔洞位置
+
+	//外边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//内边界
+	border C11(t=0, 1) {x=M1x+M1Width*t; y=M1y;label=11;}
+	border C12(t=0, 1) {x=M1x+M1Width; y=M1y+M1Height*t;label=12;}
+	border C13(t=0, 1) {x=M1x+M1Width-M1Width*t; y=M1y+M1Height;label=13;}
+	border C14(t=0, 1) {x=M1x; y=M1y+M1Height-M1Height*t;label=14;}
+
+	//内边界
+	border C21(t=0, 1) {x=M2x+M2Width*t;         y=M2y;                    label=88;}
+	border C22(t=0, 1) {x=M2x+M2Width;           y=M2y+M2Height*t;         label=88;}
+	border C23(t=0, 1) {x=M2x+M2Width-M2Width*t; y=M2y+M2Height;           label=88;}
+	border C24(t=0, 1) {x=M2x;                   y=M2y+M2Height-M2Height*t;label=88;}
+	
+	//边界上网格划分段数
+	int nGrid1 = nGrid0*M1Width*(-1);
+	int nGrid2 = nGrid0*M2Width;
+
+	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+    	                   +C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1)
+        	               +C21(nGrid2)+C22(nGrid2)+C23(nGrid2)+C24(nGrid2));
+//	//边界上网格划分段数
+//	int nGrid1 = int(nGrid0*M2Width)*(-1);
+//	
+//	//BasicTh: 基本网格，将此网格通过移动，改变其区域编号来生成其他
+//    //网格，并将其合成为新网格
+//	mesh BasicTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+//	+C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+	//plot(BasicTh, wait=1);
+	BasicTh = movemesh(BasicTh,[x*epsilon, y*epsilon]);
+	
+    mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0];
+    int[int] L2 = [4, 0,
+                  11, 0,
+                  12, 0,
+                  13, 0,
+                  14, 0];
+    //int[int] R1 = [0, 0];
+    //R1[0] = BasicTh(0.01, 0.01).region;
+    for(int i = 1; i < n; i++)
+    {
+	    //R1[1] = i;
+	    for(int j = 1; j <= 4 ; j++)
+	    {
+		    L2[2 * j + 1] = (i + 1) * 10 + j;
+		}
+	    mesh Th1 = movemesh(BasicTh, [x + epsilon*i, y]);
+	    Th0 = change(Th0, label = L1);
+	    //Th1 = change(Th1, label = L2, region=R1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;
+     //R1.resize(n*2);
+     L2.resize(8*n + 2);
+     L2[0] = 1;
+     L2[1] = 0;
+
+     for(int i = 1; i <= n; i++)
+     {
+	     for(int j = 1; j <= 4; j++)
+	     {
+		     L2[2 + (i-1)*8 + (j-1)*2] = i*10 + j;	
+		 }
+	 }
+    // for(int i = 0; i < n; i++)
+     //{
+  	 //    R1[2*i] = i;
+  	 //}
+	 
+     for(int k = 1; k < n; k++)
+     {
+ 	     //for(int j = 0; j < n; j++)
+ 	     //{
+ 		 //    R1[2*j+1] = n * k + j;
+ 		 //}
+		 for(int i = 1; i <= n; i++)
+		 {
+			 for(int j = 1; j <= 4; j++)
+			 {
+				 L2[3 + (i-1)*8 + (j-1)*2] = (i+k*n)*10 + j;	
+			 }
+		 }
+		 mesh Th1 = movemesh(ThTemp, [x, y + epsilon * k]);
+		 Th0 = change(Th0, label = L1);
+		 //Th1 = change(Th1, label = L2, region=R1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+//plot(Th0, wait=1);
+    return Th0;
+}
+
+//mesh HomoTh = RadiativeHoleMesh2(8, 20, 0.25, 0.25, 0.5, 0.5, 0.1, 0.1, 0.8, 0.8);
+//plot(HomoTh, wait=1);
+//for(int i = 0; i < 8; i++)
+//{
+//	for(int j = 0; j < 8; j++)
+//	{
+//		cout << HomoTh((0.01 + i)/8, (0.01 + j)/8).region << " ";
+//	}
+//	cout << endl;
+//}
+//savemesh(HomoTh, "RadiativeMesh.msh");

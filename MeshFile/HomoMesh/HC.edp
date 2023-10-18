@@ -1,0 +1,31 @@
+//*****************************************************************
+//均匀化计算所需二维均匀化网格文件，宏观均匀化区域为C型
+//文件网格
+//HomoVh:均匀化网格，L型区域
+mesh HomoThC;
+{                  
+    //外边界
+	border M1(t=0,1){x=t; y=0;label=1;}
+	border M2(t=0,0.25){x=1;y=t; label=2;}
+	border M3(t=0,0.5){x=1-t; y=0.25;label=3;}
+	border M4(t=0,0.5){x=0.5; y=0.25+t; label=4;}
+	border M5(t=0,0.5){x=0.5+t; y=0.75; label=5;}
+	border M6(t=0,0.25){x=1; y=0.75+t;label=6;}
+	border M7(t=0, 1) {x=1-t; y=1;label=7;}
+	border M8(t=0, 1) {x=0; y=1-t;label=8;}
+	
+    int nGrid0 = 128;
+	int nGrid1 = 64;
+	int nGrid2 = 32;
+	HomoThC = buildmesh(M1(nGrid0)
+	                   +M2(nGrid2)
+	                   +M3(nGrid1)
+	                   +M4(nGrid1)
+	                   +M5(nGrid1)
+	                   +M6(nGrid2)
+	                   +M7(nGrid0)
+	                   +M8(nGrid0));
+	plot(HomoThC, wait=1);                
+}
+
+//*****************************************************************

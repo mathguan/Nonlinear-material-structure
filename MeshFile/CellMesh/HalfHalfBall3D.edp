@@ -1,0 +1,113 @@
+//HalfHalfBall3D.edp
+load "msh3"
+load "medit"
+load "tetgen"
+load "freeyams"
+include "../MeshFunc3D.edp"
+include "CellMeshFunc.edp"
+////指定网格尺寸
+int nGrid = 20;
+
+//球心
+real rx = 0.0;
+real ry = 0.0;
+real rz = 0.0;
+
+//球半径
+real R = 1;
+
+border C01(t=0, pi/2) {x=t; y=0;label=1;}
+border C02(t=0, pi/2) {x=pi/2; y=t;label=2;}
+border C03(t=0, pi/2) {x=(pi/2-t); y=pi/2;label=3;}
+border C04(t=0, pi/2) {x=0; y=pi/2-t;label=4;}
+	
+mesh  Th=buildmesh(C01(nGrid) + C02(nGrid) + C03(nGrid) + C04(nGrid) ); //square(nGrid, nGrid,[x*pi/2,y*pi/2]);    //[-pi/2,pi/2]x[0, pi]
+//
+//球坐标变换 
+func f1 =cos(x)*cos(y);
+func f2 =cos(x)*sin(y);
+func f3 = sin(x);
+////    partiel derivative 
+//  func f1x=sin(x)*cos(y);   
+//  func f1y=-cos(x)*sin(y);
+//  func f2x=-sin(x)*sin(y);
+//  func f2y=cos(x)*cos(y);
+//  func f3x=cos(x);
+//  func f3y=0;
+//  // the metric on the sphere  $  M = DF^t DF $
+//  func m11=f1x^2+f2x^2+f3x^2;
+//  func m21=f1x*f1y+f2x*f2y+f3x*f3y;
+//  func m22=f1y^2+f2y^2+f3y^2;
+//  
+//  func perio=[[4,y],[2,y],[1,x],[3,x]];  // to store the periodic condition 
+//  
+//  real h = 0.15;
+//  real hh=h/R;// hh  mesh size on unite sphere
+//  real vv= 1/hh/hh;
+//  
+//  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+//  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+//  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+//  Th=adaptmesh(Th,m11*vv,m21*vv,m22*vv,IsMetric=1,periodic=perio);
+//  
+//指定面编号
+int[int] ref=[0, 10];  
+real maxVol = (1./nGrid)^3/6;
+//构造半球面  
+mesh3  ThS= movemesh23(Th,transfo=[f1*R+rx,f2*R+ry,f3*R+rz], orientation=1, refface=ref);
+plot(ThS, wait=1);
+//
+border Fan1(t=0, 1){x=t; y=0;}
+border Fan2(t=0, pi/2){x=cos(t); y=sin(t);}
+border Fan3(t=0, 1){x=0; y=1-t;}
+//plot(Fan1(10) + Fan2(10) + Fan3(10), wait=1);
+mesh Th1 = buildmesh(Fan1(nGrid) + Fan2(nGrid) + Fan3(nGrid));
+plot(Th1, wait=1);
+//
+// Th1=adaptmesh(Th1,m11*vv,m21*vv,m22*vv,IsMetric=1);
+// Th1=adaptmesh(Th1,m11*vv,m21*vv,m22*vv,IsMetric=1);
+//  Th1=adaptmesh(Th1,m11*vv,m21*vv,m22*vv,IsMetric=1);
+//  Th1=adaptmesh(Th1,m11*vv,m21*vv,m22*vv,IsMetric=1);
+//
+mesh3 Th13 = movemesh23(Th1, transfo=[y, x, 0]);
+mesh3 Th23 = movemesh23(Th1, transfo=[x, 0, y]);
+mesh3 FinalTh = Th13 + ThS + Th23;
+
+FinalTh = movemesh3(FinalTh, transfo=[x, y, z]);
+plot(FinalTh, wait=1);
+
+FinalTh = freeyams(FinalTh);
+plot(FinalTh, wait=1);
+int[int] L=[1, 10];
+FinalTh = change(FinalTh, region=L);
+savemesh(FinalTh, "FinalTh.mesh");
+//border Circle(t=0, 2*pi){x = cos(t); y = sin(t);}
+//
+//mesh ThCircle2 = buildmesh(Circle(2*nGrid));
+//mesh3 ThCircle3 = movemesh23(ThCircle2, transfo=[x, 0, y]);
+//
+//mesh3 ThHalfSphere = ThS + ThCircle3;
+//plot(ThHalfSphere, wait=1);
+//
+//ThHalfSphere = freeyams(ThHalfSphere, hmax=0.05);
+//plot(ThHalfSphere, wait=1);
+//
+//real[int] domain = [0.01, 0.01, 0.01, 53, maxVol];
+//ThHalfSphere = tetg(ThHalfSphere, switch="paAAQYY", nbofregions=1, regionlist=domain);
+////plot(ThHalfSphere, wait=1);
+////medit("ThHalfSphere", ThHalfSphere);
+//savemesh(ThHalfSphere, "ThHalfSphere.mesh");
+
+//mesh3 Th = CuboidFaceV2(0, 0, 0, pi/2, pi/2, 1, 10);
+//Th = movemesh3(Th, transfo=[0.2*cos(x)*cos(y)*z, 0.2*cos(x)*sin(y)*z, 0.2*sin(x)*z]);
+//plot(Th, wait=1);
+////Th = freeyams(Th, hmax=0.1);
+////Th = tetg(Th);
+////plot(Th, wait=1);
+////savemesh(Th, "myThHH.mesh");
+//mesh ThB = CCircleHoleABA(0.2, 5);
+//ThB = adaptmesh(ThB, 1, hmax=0.022);
+//mesh3 ThB3 = movemesh23(ThB, transfo=[x, y, 0]);
+//ThB3 = ThB3 + Th;
+//plot(ThB3, wait=1);
+

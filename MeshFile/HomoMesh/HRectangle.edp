@@ -1,0 +1,23 @@
+//*****************************************************************
+//均匀化计算所需二维均匀化网格文件，
+//均匀化区域为[0,1]x[0,1]
+
+//文件网格
+//HomoVh:均匀化网格
+mesh HomoTh;
+{
+	//边界
+	border C01(t=0, 1) {x=t; y=0;label=1;}
+	border C02(t=0, 1) {x=1; y=t;label=2;}
+	border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	//边界上网格划分段数
+	int nGrid0 = 128;
+	HomoTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0));
+	//plot(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0), wait=1);
+	//plot(HomoTh, wait=1);
+}
+
+
+//*****************************************************************

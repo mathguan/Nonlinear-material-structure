@@ -1,0 +1,176 @@
+load "msh3"
+load "tetgen"
+load "medit"
+
+mesh3 CellTh;
+{
+    real Mx = 0.4;
+    real My = 0.4;
+
+    real width = 0.2;
+    real height = 0.2;
+    int grids = 4; //网格尺寸只能是6，不然要出错
+    mesh3 FinalTh;
+    
+    mesh Th = square(1/width*grids, 1/width*grids);
+    Th = trunc(Th, x <=Mx|x>=Mx+width|y<=My|y>=My+height);
+    mesh Th0 = square(grids, grids, [Mx + width*x, My + height*y]);
+    
+    //plot(Th, wait=1);
+    //plot(Th0, wait = 1);
+    //--------------------------------------------------------------
+    //改变网格的区域编号，下表面编号为5
+    int RMM1 = Th(0.1, 0.1).region;
+    int[int] R1 = [RMM1, 5];
+    Th = change(Th, region=R1);
+    Th0 = change(Th0, region=R1);
+
+    //构造下表面
+    //将网格移动到XY平面原点，变换为[x, y, 0]
+    mesh3 ThButtom = movemesh23(Th , transfo=[x, y, 0]);
+    mesh3 ThButtom0 = movemesh23(Th0, transfo=[x, y, 0]);
+    FinalTh = ThButtom + ThButtom0;;
+
+    //--------------------------------------------------------------
+    //改变区域编号，上表面区域编号为6
+    R1[0] = 5;
+    R1[1] = 6;
+    Th = change(Th, region=R1);
+    Th0 = change(Th0, region=R1);
+
+    //构造上表面
+    mesh3 ThTop = movemesh23(Th, transfo=[x, y, 1]);
+    mesh3 ThTop0 = movemesh23(Th0, transfo=[x, y, 1]);
+    FinalTh = FinalTh + ThTop + ThTop0;
+
+    //--------------------------------------------------------------
+    //改变区域编号，后表面区域编号为1
+    R1[0] = 6;
+    R1[1] = 1;
+    Th = change(Th, region=R1);
+    Th0 = change(Th0, region=R1);
+    
+    //构造后表面
+    //将网格移动到YZ平面原点，变换为[0, y, x]
+    mesh3 ThBack = movemesh23(Th, transfo=[0, y, x]);
+    mesh3 ThBack0 = movemesh23(Th0, transfo=[0, y, x]);
+
+    FinalTh = FinalTh + ThBack + ThBack0;
+
+    //--------------------------------------------------------------
+    //改变区域编号，前表面区域编号为2
+    R1[0] = 1;
+    R1[1] = 2;
+    Th = change(Th, region=R1);
+    Th0 = change(Th0, region=R1);
+
+    //构造前表面
+    //func xx2Max = 1.;
+    mesh3 ThFront = movemesh23(Th, transfo=[1, y, x]);
+    mesh3 ThFront0 = movemesh23(Th0, transfo=[1, y, x]);
+
+    FinalTh = FinalTh + ThFront + ThFront0;
+
+    //--------------------------------------------------------------
+    //改变区域编号，左表面区域编号为3
+    R1[0] = 2;
+    R1[1] = 3;
+    Th = change(Th, region=R1);
+    Th0 = change(Th0, region=R1);
+
+    //构造左表面
+    //将网格移动到XZ平面原点，变换为[x, 0, y]
+    mesh3 ThLeft = movemesh23(Th, transfo=[x, 0, y]);
+    mesh3 ThLeft0 = movemesh23(Th0, transfo=[x, 0, y]);
+
+    FinalTh = FinalTh + ThLeft + ThLeft0;
+    //plot(FinalTh, wait=1);
+
+    //--------------------------------------------------------------
+    //改变区域编号，右表面区域编号为4
+    R1[0] = 3;
+    R1[1] = 4;
+    Th = change(Th, region=R1);
+    Th0 = change(Th0, region=R1);
+
+    //构造右表面
+    mesh3 ThRight = movemesh23(Th, transfo=[x, 1, y]);
+    mesh3 ThRight0 = movemesh23(Th0, transfo=[x, 1, y]);
+
+    FinalTh = FinalTh + ThRight + ThRight0;
+    
+    //--------------------------------------------------------------
+
+    real RecX = width;
+    real RecY = (1-width)/2;
+    int grids2 = grids/height*RecY; 
+    cout << "Grids2 = " << grids2 << endl;
+    mesh RecTh = square(grids, grids2, [RecX*x, RecY*y]);//Rectangle2(0, 0, RecX, RecY, 1, 2, 3, 4, grids, grids2);
+    //plot(RecTh, wait=1);
+    //------------------------------------------------------------------
+    mesh3 FinalThIn;
+
+    mesh3 Th1 = movemesh23(RecTh, transfo=[x + Mx, y, My]);
+    mesh3 Th2 = movemesh23(RecTh, transfo=[x + Mx, y, My + height]);
+    mesh3 Th3 = movemesh23(RecTh, transfo=[x + Mx, y + 1 - RecY, My]);
+    mesh3 Th4 = movemesh23(RecTh, transfo=[x + Mx, y + 1 - RecY, My + height]);
+
+    FinalThIn = Th1 + Th2 + Th3 + Th4;
+    //plot(FinalThIn, wait=1);
+
+    mesh RecTh2 = square(grids2, grids, [RecY*x, RecX*y]);;//Rectangle2(0, 0, RecY, RecX, 1, 2, 3, 4, grids2, grids);
+    mesh3 Th5 = movemesh23(RecTh2, transfo=[x, y + RecY, My]);
+    mesh3 Th6 = movemesh23(RecTh2, transfo=[x, y + RecY, My + height]);
+    mesh3 Th7 = movemesh23(RecTh2, transfo=[x + 1 - RecY, y + RecY, My]);
+    mesh3 Th8 = movemesh23(RecTh2, transfo=[x + 1 - RecY, y + RecY, My + height]);
+
+    FinalThIn = FinalThIn + Th5 + Th6 + Th7 + Th8;
+    //plot(FinalThIn, wait=1);
+    
+    // //------------------------------------------------------------------
+    mesh3 Th9  = movemesh23(RecTh, transfo = [Mx,       y,           x+RecY]);
+    mesh3 Th10 = movemesh23(RecTh, transfo = [Mx+width, y,           x+RecY]);
+    mesh3 Th11 = movemesh23(RecTh, transfo = [Mx,       y + 1- RecY, x+RecY]);
+    mesh3 Th12 = movemesh23(RecTh, transfo = [Mx+width, y + 1- RecY, x+RecY]);
+    FinalThIn = FinalThIn + Th9 + Th10 + Th11 + Th12;
+    //plot(FinalThIn, wait=1);
+
+    mesh3 Th13 = movemesh23(RecTh2, transfo = [Mx,       y + My,           x]);
+	mesh3 Th14 = movemesh23(RecTh2, transfo = [1 - RecY, y + My,           x]);
+	mesh3 Th15 = movemesh23(RecTh2, transfo = [Mx,       y + My,           x + 1 - RecY]);
+	mesh3 Th16 = movemesh23(RecTh2, transfo = [1 - RecY, y + My,           x + 1 - RecY]);
+	FinalThIn = FinalThIn + Th13 + Th14 + Th15 + Th16;
+	//plot(FinalThIn, wait=1);
+
+	//------------------------------------------------------------------
+	mesh3 Th17 = movemesh23(RecTh, transfo = [x + Mx, My,     y]);
+	mesh3 Th18 = movemesh23(RecTh, transfo = [x + Mx, 1-RecY, y]);
+	mesh3 Th19 = movemesh23(RecTh, transfo = [x + Mx, My,     y + 1- RecY]);
+	mesh3 Th20 = movemesh23(RecTh, transfo = [x + Mx, 1-RecY, y + 1- RecY]);
+	FinalThIn = FinalThIn + Th17 + Th18 + Th19 + Th20;
+	//plot(FinalThIn, wait=1);
+
+	mesh3 Th21 = movemesh23(RecTh2, transfo = [x,            My,        y + My]);
+	mesh3 Th22 = movemesh23(RecTh2, transfo = [x,            My+height, y + My]);
+	mesh3 Th23 = movemesh23(RecTh2, transfo = [x + 1 - RecY, My,        y + My]);
+	mesh3 Th24 = movemesh23(RecTh2, transfo = [x + 1 - RecY, My+height, y + My]);
+	FinalThIn = FinalThIn + Th21 + Th22 + Th23 + Th24;
+	//plot(FinalThIn, wait=1);
+
+	FinalTh = FinalTh + FinalThIn;
+	//plot(FinalTh, wait=1);
+
+	real minVol = (width/grids)^3/6;
+	//cout << minVol << endl;
+	real[int] domain = [0.01, 0.01, 0.01, 1, minVol, 0.5, 0.5, 0.5, 12, minVol];
+
+	CellTh = tetg(FinalTh, switch="paAAQY", nbofregions = 2, regionlist=domain);
+	//savemesh(CellTh, "weave3mesh3D.mesh");
+	plot(CellTh, wait=1);
+	//cout << "RM1 = " << RM1 << endl;
+	//cout << "RM2 = " << RM2 << endl;
+	//medit("CellTh", CellTh);
+}
+
+//fespace Vh2(CellTh, P1, periodic=[[3, x, z], [4, x, z], [1, y, z], [2, y, z], [5, x, y], [6, x, y]]);
+

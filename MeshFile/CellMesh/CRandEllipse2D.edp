@@ -1,0 +1,410 @@
+//任意圆心，任意转角的椭圆的画法，
+//程序扩展性有一些问题，主要是无法动态定义border, 
+//所以椭圆个数需要事先给定, border的数目要与count的数目相同
+
+include "ComputeGeometry.edp"
+
+//初始化随机数种子
+int c = time();
+randinit(c);
+
+//定义椭圆生成个数
+int count = 70;
+
+/*
+  存储随机生成的椭圆信息，包括
+  ra -- x方向轴长
+  rb -- y方向轴长
+  rx，ry -- 圆心
+  theta -- 转角
+ */
+real[int] ra(count), rb(count), rx(count), ry(count), theta(count);
+
+/*
+临时变量，存储随机生成的椭圆信息
+*/
+real[int, int] ellx1(count,8), elly1(count, 8);
+real[int] tempX(8), tempY(8), tempX2(8), tempY2(8);
+
+for(int i = 0; i < count; i++)
+{
+	int flag = true;
+	while(flag)
+	{
+		/*
+		ra[i] = 0.06*randreal1() + 0.1;
+		rb[i] = 0.04*randreal1() + 0.02;
+		*/
+		//rb[i] = (0.6+randreal1()*0.4)*ra[i];
+		//rb[i] = 0.01;
+		/*
+		*  此处可修改，定义椭圆的轴长，转角的随机生成函数
+		*/
+		ra[i] = 0.04*randreal1() + 0.04;
+		rb[i] = (0.6+randreal1()*0.4)*ra[i];
+		theta[i] = randreal1()*pi;
+		
+		
+		//ra[i] = 0.06*randreal1() + 0.1;
+		//rb[i] = 0.01;
+		//theta[i] = 0.3 + 2.54*randreal1();
+		
+		
+		//椭圆圆心的随机生成函数，一般不需要修改
+		rx[i] = randreal3();
+		ry[i] = randreal3();
+		//生成椭圆的外接八边形，判断两椭圆是否相交或包含转化为判断该外接八边形的相交与包含问题
+		generateOct(ra[i], rb[i], rx[i], ry[i], theta[i], tempX, tempY);
+		
+		ellx1(i, :) = tempX;
+		elly1(i, :) = tempY;
+		if(isInSquare(tempX, tempY, 8))
+		{
+			int j = 0;
+			//检查生成的椭圆与已经生成的椭圆是否相交
+			for(j = 0; j < i; j++)
+			{
+				//取出第j个已生成的椭圆的八边形信息
+				for(int k = 0; k < 8; k++)
+				{
+					tempX2[k] = ellx1(j, k);
+					tempY2[k] = elly1(j, k);
+				}
+                //tempX2 = ellx1(j, :);
+				//tempY2 = elly1(j, :);
+				real areaR = 8*(sqrt(2)-1)*ra[j]*rb[j];
+				
+				if(isPolygonIntersect(tempX, tempY, tempX2, tempY2, 8)||isInPolygon2(rx[i], ry[i], tempX2, tempY2, 8, 3, 0))//若相交，则break
+				//if(isPolygonIntersect(tempX, tempY, tempX2, tempY2, 8)||isInPolygon(rx[i], ry[i], tempX2, tempY2, 8, areaR))
+				{
+					break;
+				}
+			}
+			if(j == i)
+			    flag = false;
+		}
+		if(!flag)
+		{
+			cout << "Generate the " << i+1 << "th ellipse" << endl; 
+		}
+	} 
+}
+
+border C1(t=0, 1) {x=t; y=0;label=1;}
+border C2(t=0, 1) {x=1; y=t;label=2;}
+border C3(t=0, 1) {x=(1-t); y=1;label=3;}
+border C4(t=0, 1) {x=0; y=1-t;label=4;}
+border Ellipse0(t=0, 2*pi){x = rx[0] + ra[0]*cos(t)*cos(theta[0]) - rb[0]*sin(t)*sin(theta[0]); y = ry[0] + ra[0]*cos(t)*sin(theta[0]) + rb[0]*sin(t)*cos(theta[0]);}
+border Ellipse1(t=0, 2*pi){x = rx[1] + ra[1]*cos(t)*cos(theta[1]) - rb[1]*sin(t)*sin(theta[1]); y = ry[1] + ra[1]*cos(t)*sin(theta[1]) + rb[1]*sin(t)*cos(theta[1]);}
+border Ellipse2(t=0, 2*pi){x = rx[2] + ra[2]*cos(t)*cos(theta[2]) - rb[2]*sin(t)*sin(theta[2]); y = ry[2] + ra[2]*cos(t)*sin(theta[2]) + rb[2]*sin(t)*cos(theta[2]);}
+border Ellipse3(t=0, 2*pi){x = rx[3] + ra[3]*cos(t)*cos(theta[3]) - rb[3]*sin(t)*sin(theta[3]); y = ry[3] + ra[3]*cos(t)*sin(theta[3]) + rb[3]*sin(t)*cos(theta[3]);}
+border Ellipse4(t=0, 2*pi){x = rx[4] + ra[4]*cos(t)*cos(theta[4]) - rb[4]*sin(t)*sin(theta[4]); y = ry[4] + ra[4]*cos(t)*sin(theta[4]) + rb[4]*sin(t)*cos(theta[4]);}
+border Ellipse5(t=0, 2*pi){x = rx[5] + ra[5]*cos(t)*cos(theta[5]) - rb[5]*sin(t)*sin(theta[5]); y = ry[5] + ra[5]*cos(t)*sin(theta[5]) + rb[5]*sin(t)*cos(theta[5]);}
+border Ellipse6(t=0, 2*pi){x = rx[6] + ra[6]*cos(t)*cos(theta[6]) - rb[6]*sin(t)*sin(theta[6]); y = ry[6] + ra[6]*cos(t)*sin(theta[6]) + rb[6]*sin(t)*cos(theta[6]);}
+border Ellipse7(t=0, 2*pi){x = rx[7] + ra[7]*cos(t)*cos(theta[7]) - rb[7]*sin(t)*sin(theta[7]); y = ry[7] + ra[7]*cos(t)*sin(theta[7]) + rb[7]*sin(t)*cos(theta[7]);}
+border Ellipse8(t=0, 2*pi){x = rx[8] + ra[8]*cos(t)*cos(theta[8]) - rb[8]*sin(t)*sin(theta[8]); y = ry[8] + ra[8]*cos(t)*sin(theta[8]) + rb[8]*sin(t)*cos(theta[8]);}
+border Ellipse9(t=0, 2*pi){x = rx[9] + ra[9]*cos(t)*cos(theta[9]) - rb[9]*sin(t)*sin(theta[9]); y = ry[9] + ra[9]*cos(t)*sin(theta[9]) + rb[9]*sin(t)*cos(theta[9]);}
+
+border Ellipse10(t=0, 2*pi){x = rx[10] + ra[10]*cos(t)*cos(theta[10]) - rb[10]*sin(t)*sin(theta[10]); y = ry[10] + ra[10]*cos(t)*sin(theta[10]) + rb[10]*sin(t)*cos(theta[10]);}
+border Ellipse11(t=0, 2*pi){x = rx[11] + ra[11]*cos(t)*cos(theta[11]) - rb[11]*sin(t)*sin(theta[11]); y = ry[11] + ra[11]*cos(t)*sin(theta[11]) + rb[11]*sin(t)*cos(theta[11]);}
+border Ellipse12(t=0, 2*pi){x = rx[12] + ra[12]*cos(t)*cos(theta[12]) - rb[12]*sin(t)*sin(theta[12]); y = ry[12] + ra[12]*cos(t)*sin(theta[12]) + rb[12]*sin(t)*cos(theta[12]);}
+border Ellipse13(t=0, 2*pi){x = rx[13] + ra[13]*cos(t)*cos(theta[13]) - rb[13]*sin(t)*sin(theta[13]); y = ry[13] + ra[13]*cos(t)*sin(theta[13]) + rb[13]*sin(t)*cos(theta[13]);}
+border Ellipse14(t=0, 2*pi){x = rx[14] + ra[14]*cos(t)*cos(theta[14]) - rb[14]*sin(t)*sin(theta[14]); y = ry[14] + ra[14]*cos(t)*sin(theta[14]) + rb[14]*sin(t)*cos(theta[14]);}
+border Ellipse15(t=0, 2*pi){x = rx[15] + ra[15]*cos(t)*cos(theta[15]) - rb[15]*sin(t)*sin(theta[15]); y = ry[15] + ra[15]*cos(t)*sin(theta[15]) + rb[15]*sin(t)*cos(theta[15]);}
+border Ellipse16(t=0, 2*pi){x = rx[16] + ra[16]*cos(t)*cos(theta[16]) - rb[16]*sin(t)*sin(theta[16]); y = ry[16] + ra[16]*cos(t)*sin(theta[16]) + rb[16]*sin(t)*cos(theta[16]);}
+border Ellipse17(t=0, 2*pi){x = rx[17] + ra[17]*cos(t)*cos(theta[17]) - rb[17]*sin(t)*sin(theta[17]); y = ry[17] + ra[17]*cos(t)*sin(theta[17]) + rb[17]*sin(t)*cos(theta[17]);}
+border Ellipse18(t=0, 2*pi){x = rx[18] + ra[18]*cos(t)*cos(theta[18]) - rb[18]*sin(t)*sin(theta[18]); y = ry[18] + ra[18]*cos(t)*sin(theta[18]) + rb[18]*sin(t)*cos(theta[18]);}
+border Ellipse19(t=0, 2*pi){x = rx[19] + ra[19]*cos(t)*cos(theta[19]) - rb[19]*sin(t)*sin(theta[19]); y = ry[19] + ra[19]*cos(t)*sin(theta[19]) + rb[19]*sin(t)*cos(theta[19]);}
+// 
+border Ellipse20(t=0, 2*pi){x = rx[20] + ra[20]*cos(t)*cos(theta[20]) - rb[20]*sin(t)*sin(theta[20]); y = ry[20] + ra[20]*cos(t)*sin(theta[20]) + rb[20]*sin(t)*cos(theta[20]);}
+border Ellipse21(t=0, 2*pi){x = rx[21] + ra[21]*cos(t)*cos(theta[21]) - rb[21]*sin(t)*sin(theta[21]); y = ry[21] + ra[21]*cos(t)*sin(theta[21]) + rb[21]*sin(t)*cos(theta[21]);}
+border Ellipse22(t=0, 2*pi){x = rx[22] + ra[22]*cos(t)*cos(theta[22]) - rb[22]*sin(t)*sin(theta[22]); y = ry[22] + ra[22]*cos(t)*sin(theta[22]) + rb[22]*sin(t)*cos(theta[22]);}
+border Ellipse23(t=0, 2*pi){x = rx[23] + ra[23]*cos(t)*cos(theta[23]) - rb[23]*sin(t)*sin(theta[23]); y = ry[23] + ra[23]*cos(t)*sin(theta[23]) + rb[23]*sin(t)*cos(theta[23]);}
+border Ellipse24(t=0, 2*pi){x = rx[24] + ra[24]*cos(t)*cos(theta[24]) - rb[24]*sin(t)*sin(theta[24]); y = ry[24] + ra[24]*cos(t)*sin(theta[24]) + rb[24]*sin(t)*cos(theta[24]);}
+border Ellipse25(t=0, 2*pi){x = rx[25] + ra[25]*cos(t)*cos(theta[25]) - rb[25]*sin(t)*sin(theta[25]); y = ry[25] + ra[25]*cos(t)*sin(theta[25]) + rb[25]*sin(t)*cos(theta[25]);}
+border Ellipse26(t=0, 2*pi){x = rx[26] + ra[26]*cos(t)*cos(theta[26]) - rb[26]*sin(t)*sin(theta[26]); y = ry[26] + ra[26]*cos(t)*sin(theta[26]) + rb[26]*sin(t)*cos(theta[26]);}
+border Ellipse27(t=0, 2*pi){x = rx[27] + ra[27]*cos(t)*cos(theta[27]) - rb[27]*sin(t)*sin(theta[27]); y = ry[27] + ra[27]*cos(t)*sin(theta[27]) + rb[27]*sin(t)*cos(theta[27]);}
+border Ellipse28(t=0, 2*pi){x = rx[28] + ra[28]*cos(t)*cos(theta[28]) - rb[28]*sin(t)*sin(theta[28]); y = ry[28] + ra[28]*cos(t)*sin(theta[28]) + rb[28]*sin(t)*cos(theta[28]);}
+border Ellipse29(t=0, 2*pi){x = rx[29] + ra[29]*cos(t)*cos(theta[29]) - rb[29]*sin(t)*sin(theta[29]); y = ry[29] + ra[29]*cos(t)*sin(theta[29]) + rb[29]*sin(t)*cos(theta[29]);}
+// 
+border Ellipse30(t=0, 2*pi){x = rx[30] + ra[30]*cos(t)*cos(theta[30]) - rb[30]*sin(t)*sin(theta[30]); y = ry[30] + ra[30]*cos(t)*sin(theta[30]) + rb[30]*sin(t)*cos(theta[30]);}
+border Ellipse31(t=0, 2*pi){x = rx[31] + ra[31]*cos(t)*cos(theta[31]) - rb[31]*sin(t)*sin(theta[31]); y = ry[31] + ra[31]*cos(t)*sin(theta[31]) + rb[31]*sin(t)*cos(theta[31]);}
+border Ellipse32(t=0, 2*pi){x = rx[32] + ra[32]*cos(t)*cos(theta[32]) - rb[32]*sin(t)*sin(theta[32]); y = ry[32] + ra[32]*cos(t)*sin(theta[32]) + rb[32]*sin(t)*cos(theta[32]);}
+border Ellipse33(t=0, 2*pi){x = rx[33] + ra[33]*cos(t)*cos(theta[33]) - rb[33]*sin(t)*sin(theta[33]); y = ry[33] + ra[33]*cos(t)*sin(theta[33]) + rb[33]*sin(t)*cos(theta[33]);}
+border Ellipse34(t=0, 2*pi){x = rx[34] + ra[34]*cos(t)*cos(theta[34]) - rb[34]*sin(t)*sin(theta[34]); y = ry[34] + ra[34]*cos(t)*sin(theta[34]) + rb[34]*sin(t)*cos(theta[34]);}
+border Ellipse35(t=0, 2*pi){x = rx[35] + ra[35]*cos(t)*cos(theta[35]) - rb[35]*sin(t)*sin(theta[35]); y = ry[35] + ra[35]*cos(t)*sin(theta[35]) + rb[35]*sin(t)*cos(theta[35]);}
+border Ellipse36(t=0, 2*pi){x = rx[36] + ra[36]*cos(t)*cos(theta[36]) - rb[36]*sin(t)*sin(theta[36]); y = ry[36] + ra[36]*cos(t)*sin(theta[36]) + rb[36]*sin(t)*cos(theta[36]);}
+border Ellipse37(t=0, 2*pi){x = rx[37] + ra[37]*cos(t)*cos(theta[37]) - rb[37]*sin(t)*sin(theta[37]); y = ry[37] + ra[37]*cos(t)*sin(theta[37]) + rb[37]*sin(t)*cos(theta[37]);}
+border Ellipse38(t=0, 2*pi){x = rx[38] + ra[38]*cos(t)*cos(theta[38]) - rb[38]*sin(t)*sin(theta[38]); y = ry[38] + ra[38]*cos(t)*sin(theta[38]) + rb[38]*sin(t)*cos(theta[38]);}
+border Ellipse39(t=0, 2*pi){x = rx[39] + ra[39]*cos(t)*cos(theta[39]) - rb[39]*sin(t)*sin(theta[39]); y = ry[39] + ra[39]*cos(t)*sin(theta[39]) + rb[39]*sin(t)*cos(theta[39]);}
+
+border Ellipse40(t=0, 2*pi){x = rx[40] + ra[40]*cos(t)*cos(theta[40]) - rb[40]*sin(t)*sin(theta[40]); y = ry[40] + ra[40]*cos(t)*sin(theta[40]) + rb[40]*sin(t)*cos(theta[40]);}
+border Ellipse41(t=0, 2*pi){x = rx[41] + ra[41]*cos(t)*cos(theta[41]) - rb[41]*sin(t)*sin(theta[41]); y = ry[41] + ra[41]*cos(t)*sin(theta[41]) + rb[41]*sin(t)*cos(theta[41]);}
+border Ellipse42(t=0, 2*pi){x = rx[42] + ra[42]*cos(t)*cos(theta[42]) - rb[42]*sin(t)*sin(theta[42]); y = ry[42] + ra[42]*cos(t)*sin(theta[42]) + rb[42]*sin(t)*cos(theta[42]);}
+border Ellipse43(t=0, 2*pi){x = rx[43] + ra[43]*cos(t)*cos(theta[43]) - rb[43]*sin(t)*sin(theta[43]); y = ry[43] + ra[43]*cos(t)*sin(theta[43]) + rb[43]*sin(t)*cos(theta[43]);}
+border Ellipse44(t=0, 2*pi){x = rx[44] + ra[44]*cos(t)*cos(theta[44]) - rb[44]*sin(t)*sin(theta[44]); y = ry[44] + ra[44]*cos(t)*sin(theta[44]) + rb[44]*sin(t)*cos(theta[44]);}
+border Ellipse45(t=0, 2*pi){x = rx[45] + ra[45]*cos(t)*cos(theta[45]) - rb[45]*sin(t)*sin(theta[45]); y = ry[45] + ra[45]*cos(t)*sin(theta[45]) + rb[45]*sin(t)*cos(theta[45]);}
+border Ellipse46(t=0, 2*pi){x = rx[46] + ra[46]*cos(t)*cos(theta[46]) - rb[46]*sin(t)*sin(theta[46]); y = ry[46] + ra[46]*cos(t)*sin(theta[46]) + rb[46]*sin(t)*cos(theta[46]);}
+border Ellipse47(t=0, 2*pi){x = rx[47] + ra[47]*cos(t)*cos(theta[47]) - rb[47]*sin(t)*sin(theta[47]); y = ry[47] + ra[47]*cos(t)*sin(theta[47]) + rb[47]*sin(t)*cos(theta[47]);}
+border Ellipse48(t=0, 2*pi){x = rx[48] + ra[48]*cos(t)*cos(theta[48]) - rb[48]*sin(t)*sin(theta[48]); y = ry[48] + ra[48]*cos(t)*sin(theta[48]) + rb[48]*sin(t)*cos(theta[48]);}
+border Ellipse49(t=0, 2*pi){x = rx[49] + ra[49]*cos(t)*cos(theta[49]) - rb[49]*sin(t)*sin(theta[49]); y = ry[49] + ra[49]*cos(t)*sin(theta[49]) + rb[49]*sin(t)*cos(theta[49]);}
+
+border Ellipse50(t=0, 2*pi){x = rx[50] + ra[50]*cos(t)*cos(theta[50]) - rb[50]*sin(t)*sin(theta[50]); y = ry[50] + ra[50]*cos(t)*sin(theta[50]) + rb[50]*sin(t)*cos(theta[50]);}
+border Ellipse51(t=0, 2*pi){x = rx[51] + ra[51]*cos(t)*cos(theta[51]) - rb[51]*sin(t)*sin(theta[51]); y = ry[51] + ra[51]*cos(t)*sin(theta[51]) + rb[51]*sin(t)*cos(theta[51]);}
+border Ellipse52(t=0, 2*pi){x = rx[52] + ra[52]*cos(t)*cos(theta[52]) - rb[52]*sin(t)*sin(theta[52]); y = ry[52] + ra[52]*cos(t)*sin(theta[52]) + rb[52]*sin(t)*cos(theta[52]);}
+border Ellipse53(t=0, 2*pi){x = rx[53] + ra[53]*cos(t)*cos(theta[53]) - rb[53]*sin(t)*sin(theta[53]); y = ry[53] + ra[53]*cos(t)*sin(theta[53]) + rb[53]*sin(t)*cos(theta[53]);}
+border Ellipse54(t=0, 2*pi){x = rx[54] + ra[54]*cos(t)*cos(theta[54]) - rb[54]*sin(t)*sin(theta[54]); y = ry[54] + ra[54]*cos(t)*sin(theta[54]) + rb[54]*sin(t)*cos(theta[54]);}
+border Ellipse55(t=0, 2*pi){x = rx[55] + ra[55]*cos(t)*cos(theta[55]) - rb[55]*sin(t)*sin(theta[55]); y = ry[55] + ra[55]*cos(t)*sin(theta[55]) + rb[55]*sin(t)*cos(theta[55]);}
+border Ellipse56(t=0, 2*pi){x = rx[56] + ra[56]*cos(t)*cos(theta[56]) - rb[56]*sin(t)*sin(theta[56]); y = ry[56] + ra[56]*cos(t)*sin(theta[56]) + rb[56]*sin(t)*cos(theta[56]);}
+border Ellipse57(t=0, 2*pi){x = rx[57] + ra[57]*cos(t)*cos(theta[57]) - rb[57]*sin(t)*sin(theta[57]); y = ry[57] + ra[57]*cos(t)*sin(theta[57]) + rb[57]*sin(t)*cos(theta[57]);}
+border Ellipse58(t=0, 2*pi){x = rx[58] + ra[58]*cos(t)*cos(theta[58]) - rb[58]*sin(t)*sin(theta[58]); y = ry[58] + ra[58]*cos(t)*sin(theta[58]) + rb[58]*sin(t)*cos(theta[58]);}
+border Ellipse59(t=0, 2*pi){x = rx[59] + ra[59]*cos(t)*cos(theta[59]) - rb[59]*sin(t)*sin(theta[59]); y = ry[59] + ra[59]*cos(t)*sin(theta[59]) + rb[59]*sin(t)*cos(theta[59]);}
+
+border Ellipse60(t=0, 2*pi){x = rx[60] + ra[60]*cos(t)*cos(theta[60]) - rb[60]*sin(t)*sin(theta[60]); y = ry[60] + ra[60]*cos(t)*sin(theta[60]) + rb[60]*sin(t)*cos(theta[60]);}
+border Ellipse61(t=0, 2*pi){x = rx[61] + ra[61]*cos(t)*cos(theta[61]) - rb[61]*sin(t)*sin(theta[61]); y = ry[61] + ra[61]*cos(t)*sin(theta[61]) + rb[61]*sin(t)*cos(theta[61]);}
+border Ellipse62(t=0, 2*pi){x = rx[62] + ra[62]*cos(t)*cos(theta[62]) - rb[62]*sin(t)*sin(theta[62]); y = ry[62] + ra[62]*cos(t)*sin(theta[62]) + rb[62]*sin(t)*cos(theta[62]);}
+border Ellipse63(t=0, 2*pi){x = rx[63] + ra[63]*cos(t)*cos(theta[63]) - rb[63]*sin(t)*sin(theta[63]); y = ry[63] + ra[63]*cos(t)*sin(theta[63]) + rb[63]*sin(t)*cos(theta[63]);}
+border Ellipse64(t=0, 2*pi){x = rx[64] + ra[64]*cos(t)*cos(theta[64]) - rb[64]*sin(t)*sin(theta[64]); y = ry[64] + ra[64]*cos(t)*sin(theta[64]) + rb[64]*sin(t)*cos(theta[64]);}
+border Ellipse65(t=0, 2*pi){x = rx[65] + ra[65]*cos(t)*cos(theta[65]) - rb[65]*sin(t)*sin(theta[65]); y = ry[65] + ra[65]*cos(t)*sin(theta[65]) + rb[65]*sin(t)*cos(theta[65]);}
+border Ellipse66(t=0, 2*pi){x = rx[66] + ra[66]*cos(t)*cos(theta[66]) - rb[66]*sin(t)*sin(theta[66]); y = ry[66] + ra[66]*cos(t)*sin(theta[66]) + rb[66]*sin(t)*cos(theta[66]);}
+border Ellipse67(t=0, 2*pi){x = rx[67] + ra[67]*cos(t)*cos(theta[67]) - rb[67]*sin(t)*sin(theta[67]); y = ry[67] + ra[67]*cos(t)*sin(theta[67]) + rb[67]*sin(t)*cos(theta[67]);}
+border Ellipse68(t=0, 2*pi){x = rx[68] + ra[68]*cos(t)*cos(theta[68]) - rb[68]*sin(t)*sin(theta[68]); y = ry[68] + ra[68]*cos(t)*sin(theta[68]) + rb[68]*sin(t)*cos(theta[68]);}
+border Ellipse69(t=0, 2*pi){x = rx[69] + ra[69]*cos(t)*cos(theta[69]) - rb[69]*sin(t)*sin(theta[69]); y = ry[69] + ra[69]*cos(t)*sin(theta[69]) + rb[69]*sin(t)*cos(theta[69]);}
+
+//如是复合材料，则isHole取为0，孔洞材料取为1
+bool isHole = 0;
+
+//定义网格尺寸
+int ngrid0 = 100;
+//int ngrid2 = -20;
+real[int] ngrid2(70);
+for(int i=0; i < 70; i++)
+{
+	real len = 2*pi*min(ra[i], rb[i]) + 4*abs(ra[i] - rb[i]);
+	ngrid2[i] = isHole?-ngrid0*len:ngrid0*len;
+}
+
+//画出几何区域
+plot(C1(ngrid0) + C2(ngrid0) + C3(ngrid0) + C4(ngrid0)
+     +Ellipse0(ngrid2[0])
+     +Ellipse1(ngrid2[1])
+     +Ellipse2(ngrid2[2])
+     +Ellipse3(ngrid2[3])
+     +Ellipse4(ngrid2[4])
+     +Ellipse5(ngrid2[5])
+     +Ellipse6(ngrid2[6])
+     +Ellipse7(ngrid2[7])
+     +Ellipse8(ngrid2[8])
+     +Ellipse9(ngrid2[9])
+     
+     +Ellipse10(ngrid2[10])
+     +Ellipse11(ngrid2[11])
+     +Ellipse12(ngrid2[12])
+     +Ellipse13(ngrid2[13])
+     +Ellipse14(ngrid2[14])
+     +Ellipse15(ngrid2[15])
+     +Ellipse16(ngrid2[16])
+     +Ellipse17(ngrid2[17])
+     +Ellipse18(ngrid2[18])
+     +Ellipse19(ngrid2[19])
+// //      
+     +Ellipse20(ngrid2[20])
+     +Ellipse21(ngrid2[21])
+     +Ellipse22(ngrid2[22])
+     +Ellipse23(ngrid2[23])
+     +Ellipse24(ngrid2[24])
+     +Ellipse25(ngrid2[25])
+     +Ellipse26(ngrid2[26])
+     +Ellipse27(ngrid2[27])
+     +Ellipse28(ngrid2[28])
+     +Ellipse29(ngrid2[29])
+//      
+     +Ellipse30(ngrid2[30])
+     +Ellipse31(ngrid2[31])
+     +Ellipse32(ngrid2[32])
+     +Ellipse33(ngrid2[33])
+     +Ellipse34(ngrid2[34])
+     +Ellipse35(ngrid2[35])
+     +Ellipse36(ngrid2[36])
+     +Ellipse37(ngrid2[37])
+     +Ellipse38(ngrid2[38])
+     +Ellipse39(ngrid2[39])
+     
+     +Ellipse40(ngrid2[40])
+     +Ellipse41(ngrid2[41])
+     +Ellipse42(ngrid2[42])
+     +Ellipse43(ngrid2[43])
+     +Ellipse44(ngrid2[44])
+     +Ellipse45(ngrid2[45])
+     +Ellipse46(ngrid2[46])
+     +Ellipse47(ngrid2[47])
+     +Ellipse48(ngrid2[48])
+     +Ellipse49(ngrid2[49])
+     
+     +Ellipse50(ngrid2[50])
+     +Ellipse51(ngrid2[51])
+     +Ellipse52(ngrid2[52])
+     +Ellipse53(ngrid2[53])
+     +Ellipse54(ngrid2[54])
+     +Ellipse55(ngrid2[55])
+     +Ellipse56(ngrid2[56])
+     +Ellipse57(ngrid2[57])
+     +Ellipse58(ngrid2[58])
+     +Ellipse59(ngrid2[59])
+     
+     +Ellipse60(ngrid2[60])
+     +Ellipse61(ngrid2[61])
+     +Ellipse62(ngrid2[62])
+     +Ellipse63(ngrid2[63])
+     +Ellipse64(ngrid2[64])
+     +Ellipse65(ngrid2[65])
+     +Ellipse66(ngrid2[66])
+     +Ellipse67(ngrid2[67])
+     +Ellipse68(ngrid2[68])
+     +Ellipse69(ngrid2[69])
+, wait=1);
+
+
+//网格生成
+mesh Th = buildmesh(C1(ngrid0) + C2(ngrid0) + C3(ngrid0) + C4(ngrid0)
+     +Ellipse0(ngrid2[0])
+     +Ellipse1(ngrid2[1])
+     +Ellipse2(ngrid2[2])
+     +Ellipse3(ngrid2[3])
+     +Ellipse4(ngrid2[4])
+     +Ellipse5(ngrid2[5])
+     +Ellipse6(ngrid2[6])
+     +Ellipse7(ngrid2[7])
+     +Ellipse8(ngrid2[8])
+     +Ellipse9(ngrid2[9])
+     
+     +Ellipse10(ngrid2[10])
+     +Ellipse11(ngrid2[11])
+     +Ellipse12(ngrid2[12])
+     +Ellipse13(ngrid2[13])
+     +Ellipse14(ngrid2[14])
+     +Ellipse15(ngrid2[15])
+     +Ellipse16(ngrid2[16])
+     +Ellipse17(ngrid2[17])
+     +Ellipse18(ngrid2[18])
+     +Ellipse19(ngrid2[19])
+// //      
+     +Ellipse20(ngrid2[20])
+     +Ellipse21(ngrid2[21])
+     +Ellipse22(ngrid2[22])
+     +Ellipse23(ngrid2[23])
+     +Ellipse24(ngrid2[24])
+     +Ellipse25(ngrid2[25])
+     +Ellipse26(ngrid2[26])
+     +Ellipse27(ngrid2[27])
+     +Ellipse28(ngrid2[28])
+     +Ellipse29(ngrid2[29])
+//      
+     +Ellipse30(ngrid2[30])
+     +Ellipse31(ngrid2[31])
+     +Ellipse32(ngrid2[32])
+     +Ellipse33(ngrid2[33])
+     +Ellipse34(ngrid2[34])
+     +Ellipse35(ngrid2[35])
+     +Ellipse36(ngrid2[36])
+     +Ellipse37(ngrid2[37])
+     +Ellipse38(ngrid2[38])
+     +Ellipse39(ngrid2[39])
+     
+     +Ellipse40(ngrid2[40])
+     +Ellipse41(ngrid2[41])
+     +Ellipse42(ngrid2[42])
+     +Ellipse43(ngrid2[43])
+     +Ellipse44(ngrid2[44])
+     +Ellipse45(ngrid2[45])
+     +Ellipse46(ngrid2[46])
+     +Ellipse47(ngrid2[47])
+     +Ellipse48(ngrid2[48])
+     +Ellipse49(ngrid2[49])
+     
+     +Ellipse50(ngrid2[50])
+     +Ellipse51(ngrid2[51])
+     +Ellipse52(ngrid2[52])
+     +Ellipse53(ngrid2[53])
+     +Ellipse54(ngrid2[54])
+     +Ellipse55(ngrid2[55])
+     +Ellipse56(ngrid2[56])
+     +Ellipse57(ngrid2[57])
+     +Ellipse58(ngrid2[58])
+     +Ellipse59(ngrid2[59])
+     
+     +Ellipse60(ngrid2[60])
+     +Ellipse61(ngrid2[61])
+     +Ellipse62(ngrid2[62])
+     +Ellipse63(ngrid2[63])
+     +Ellipse64(ngrid2[64])
+     +Ellipse65(ngrid2[65])
+     +Ellipse66(ngrid2[66])
+     +Ellipse67(ngrid2[67])
+     +Ellipse68(ngrid2[68])
+     +Ellipse69(ngrid2[69])
+);
+
+/* 
+若是复合结构，将内部各椭圆编号设为相同
+*/
+if(!isHole)
+{
+	int[int] R1(2 + 2*count);
+	R1[0] = Th(0.01, 0.01).region;
+	R1[1] = 4;
+	for(int i = 0; i < count; i++)
+	{
+		R1[2*i + 2] = Th(rx[i], ry[i]).region;
+		R1[2*i + 3] = 0;
+	}
+	Th = change(Th, region=R1);
+}
+//plot(Th, wait=1);
+//int RM1 = Th(0.01, 0.01).region;
+//int RM2 = 0;
+//fespace Vh(Th, P0);
+//Vh a = 100*(region==RM1) + 10*(region==RM2);
+//cout << int2d(Th)(a==10) << endl;
+//cout << int2d(Th)(a==100) << endl;
+
+//计算均匀化系数
+mesh CellTh = Th;
+int RM1 = CellTh(0.01, 0.01).region;
+int RM2 = 0;
+
+func a = 100 * (region == RM1) + 1 * (region == RM2);
+
+fespace CellVh(CellTh, P1);
+//1.一阶单胞求解
+CellVh N1, v;
+{
+    solve CellN1(N1, v)=
+        int2d(CellTh)((a)*(dx(N1)*dx(v)+dy(N1)*dy(v)))
+       +int2d(CellTh)((a)*dx(v))
+       +on(1,2,3,4, N1=0);
+    //plot(N1, wait=1, value=1, fill=1);
+}
+
+CellVh N2;
+{
+    solve CellN2(N2, v)=
+        int2d(CellTh)(a*(dx(N2)*dx(v)+dy(N2)*dy(v)))
+       +int2d(CellTh)(a*dy(v))
+       +on(1,2,3,4, N2=0);
+    //plot(N2, wait=1, value=1, fill=1);
+}
+
+//2.均匀化系数的计算
+real a11, a22, a12, a21;
+a11 = int2d(CellTh)(a + a*dx(N1));
+a22 = int2d(CellTh)(a + a*dy(N2));
+a12 = int2d(CellTh)(a*dx(N2));
+a21 = int2d(CellTh)(a*dy(N1));
+cout << "Homogenized Heat Conductivity" << endl;
+cout << "a11= " << a11 <<endl;
+cout << "a12= " << a12 <<endl;
+cout << "a21= " << a21 <<endl;
+cout << "a22= " << a22 <<endl;
+cout << endl;
+

@@ -1,0 +1,71 @@
+//美国队长盾牌
+//主要技术问题: 五角星的画法
+real[int] aX(5), aY(5), bX(5), bY(5);
+real angle18 = 0.1*pi;
+real angle36 = 0.2*pi;
+real angle54 = 0.3*pi;
+real angle72 = 0.4*pi;
+real aLen = 1, bLen = aLen*sin(angle18)/sin(angle54);
+cout << bLen << endl;
+for(int i = 0; i < 5; i++)
+{
+	aX[i] = aLen*cos(angle18 + angle72*i);
+	aY[i] = aLen*sin(angle18 + angle72*i);
+	bX[i] = bLen*cos(angle54 + angle72*i);
+	bY[i] = bLen*sin(angle54 + angle72*i);
+}
+
+border L1(t=0, 1) {x = (1 - t) * aX[0] + t * bX[0]; y = (1 - t) * aY[0] + t * bY[0]; label = 20;} // a0 -- b0
+border L2(t=0, 1) {x = (1 - t) * bX[0] + t * aX[1]; y = (1 - t) * bY[0] + t * aY[1]; label = 20;} // b0 -- a1
+border L3(t=0, 1) {x = (1 - t) * aX[1] + t * bX[1]; y = (1 - t) * aY[1] + t * bY[1]; label = 20;} // a1 -- b1
+border L4(t=0, 1) {x = (1 - t) * bX[1] + t * aX[2]; y = (1 - t) * bY[1] + t * aY[2]; label = 20;} // b1 -- a2
+border L5(t=0, 1) {x = (1 - t) * aX[2] + t * bX[2]; y = (1 - t) * aY[2] + t * bY[2]; label = 20;} // a2 -- b2
+border L6(t=0, 1) {x = (1 - t) * bX[2] + t * aX[3]; y = (1 - t) * bY[2] + t * aY[3]; label = 20;} // b2 -- a3
+border L7(t=0, 1) {x = (1 - t) * aX[3] + t * bX[3]; y = (1 - t) * aY[3] + t * bY[3]; label = 20;} // a3 -- b3
+border L8(t=0, 1) {x = (1 - t) * bX[3] + t * aX[4]; y = (1 - t) * bY[3] + t * aY[4]; label = 20;} // b3 -- a4
+border L9(t=0, 1) {x = (1 - t) * aX[4] + t * bX[4]; y = (1 - t) * aY[4] + t * bY[4]; label = 20;} // a4 -- b4
+border L10(t=0, 1) {x = (1 - t) * bX[4] + t * aX[0]; y = (1 - t) * bY[4] + t * aY[0]; label = 20;} // b4 -- a0
+
+
+border C11(t = 0, 2*pi/5){x = aLen*cos(angle18 + t); y = aLen*sin(angle18 + t); }
+border C12(t = pi/2, pi/2 + 2*pi/5){x = aLen*cos(t); y = aLen*sin(t); }
+border C13(t = pi/2 + 2*pi/5, pi/2 + 4*pi/5){x = aLen*cos(t); y = aLen*sin(t); }
+border C14(t = pi/2 + 4*pi/5, pi/2 + 6*pi/5){x = aLen*cos(t); y = aLen*sin(t); }
+border C15(t = pi/2 + 6*pi/5, pi/2 + 8*pi/5){x = aLen*cos(t); y = aLen*sin(t); }
+border C2(t = 0, 2*pi){x = 1.5 * aLen * cos(t); y = 1.5 * aLen * sin(t); }
+border C3(t = 0, 2*pi){x = 2 * aLen * cos(t); y = 2 * aLen * sin(t); }
+border C4(t = 0, 2*pi){x = 2.5 * aLen * cos(t); y = 2.5 * aLen * sin(t); label = 1;}
+
+//plot(L1(10) + L2(10) +  L3(10) + L4(10) + L5(10) + L6(10) + L7(10) + L8(10) + L9(10) + L10(10) + C11(20) + C12(20) + C13(20) + C14(20) + C15(20) + C2(150) + C3(200) + C4(250),wait=1);
+mesh ShieldTh = buildmesh(L1(10) + L2(10) +  L3(10) + L4(10) + L5(10) + L6(10) + L7(10) + L8(10) + L9(10) + L10(10) 
+                      + C11(20) + C12(20) + C13(20) + C14(20) + C15(20)+ C2(150) + C3(200) + C4(250));
+//plot(ShieldTh, wait=1);
+
+int[int] R1 = [0, 15];
+for(int i = 0; i < 5; i++)
+{
+	R1[0] = ShieldTh(0.5*cos(angle54 + i*angle72), 0.5*sin(angle54 + i*angle72)).region;
+	//cout << R1[0] << endl;
+	ShieldTh = change(ShieldTh, region=R1);
+}
+//plot(ShieldTh, wait=1);
+R1[0] = ShieldTh(0, 0).region;
+R1[1] = 4;
+ShieldTh = change(ShieldTh, region=R1);
+//plot(ShieldTh, wait=1);
+R1[0] = ShieldTh(0, 1.75).region;
+R1[1] = 4;
+ShieldTh = change(ShieldTh, region=R1);
+//plot(ShieldTh, wait=1);
+R1[0] = ShieldTh(0, 2.25).region;
+R1[1] = 1;
+ShieldTh = change(ShieldTh, region=R1);
+//plot(ShieldTh, wait=1);
+R1[0] = ShieldTh(0, 1.25).region;
+R1[1] = 1;
+ShieldTh = change(ShieldTh, region=R1);
+
+plot(ShieldTh, wait=1);
+savemesh(ShieldTh, "ShieldTh.msh");
+//cout << ShieldTh(0, 1.25).region << endl;
+

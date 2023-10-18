@@ -1,0 +1,63 @@
+mesh Th0 = square(5, 5, [0.5*x, 0.5*y]);
+
+int[int] L1 = [2, 0, 3, 5];
+int[int] L2 = [4, 0, 3, 6];
+int nR = Th0(0.5, 0.5).region;
+int[int] R1 = [nR, 1];
+mesh Th1 = Th0;
+Th1 = change(Th1, label = L1, region=R1);
+//plot(Th1, wait=1);
+
+R1[1] = 6;
+mesh Th2 = movemesh(Th0, [x+0.5, y]);
+Th2 = change(Th2, label = L2, region=R1);
+Th1 = Th1 + Th2;
+//plot(Th1, wait=1);
+
+mesh Th3 = movemesh(Th0, [x, y+0.5]);
+int[int] L3 = [5, 0];
+L1[0] = 1;
+L1[2] = 2;
+L1[3] = 7;
+Th3 = change(Th3, label = L1, region=R1);
+Th1 = change(Th1, label = L3);
+Th1 = Th1 + Th3;
+//plot(Th1, wait=1);
+
+mesh Th4 = movemesh(Th0, [x+0.5, y+0.5]);
+L1[2] = 4;
+L1[3] = 0;
+L2[0] = 6;
+L2[2] = 7;
+L2[3] = 0;
+R1[1] = 1;
+Th4 = change(Th4, label = L1, region=R1);
+Th1 = change(Th1, label = L2);
+Th1 = Th1 + Th4;
+//plot(Th1, wait=1);
+
+    real shiftX = 1;
+    real shiftY = 1;
+int n = 8;
+//	BasicTh = movemesh(BasicTh,[x*epsilonX, y*epsilonY]);
+    mesh Th00 = Th1;
+    int[int] LL1 = [2, 0], LL2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th11 = movemesh(Th1, [shiftX*i+x, y]);
+	    Th00 = change(Th00, label = LL1);
+	    Th11 = change(Th11, label = LL2);
+	    Th00 = Th00 +Th11;
+	    //plot(Th0, wait=1);
+	 }	 
+ 	 mesh ThTemp = Th00;
+ 	 LL1[0] = 3;LL2[0] = 1;
+      for(int i=1; i < n; i++)
+      {
+		 mesh Th11 = movemesh(ThTemp, [x, y + shiftY * i]);
+ 		 Th00 = change(Th00, label = LL1);
+ 		 Th11 = change(Th11, label = LL2);
+ 		 Th00 = Th00 +Th11;	
+ 	}
+ 	
+plot(Th00, wait=1);

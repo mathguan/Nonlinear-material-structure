@@ -1,0 +1,30 @@
+load "msh3"
+load "tetgen"
+include "../MacroMesh/MacroMeshfunc.edp"
+real h = 0.3;
+real L = 1;
+real n = 5;
+mesh MacroTh = MacroMeshHoneyComb(n, L, h, 10, 3);
+real HX = (3*L + sqrt(3)*h)*n;
+real HY = (sqrt(3)*L + h)*n;
+plot(MacroTh, wait=1);
+int nz = 5;
+int[int] rup=[0, 5], rdown=[0, 6];
+real radius = HX/(2*pi);
+real rx = 0;
+real ry = 0;
+mesh3 HoneyStructureTh = buildlayers(MacroTh, nz, zbound=[0, 0.5], labelup=rup, labeldown=rdown,
+                        transfo=[rx + (radius+z)*cos(2*pi/HX*x), 
+                                 ry + (radius+z)*sin(2*pi/HX*x), y],
+                         facemerge=0);
+plot(HoneyStructureTh, wait=1);
+
+
+// mesh3 Th3 = movemesh3(HoneyStructureTh, transfo=[rx + (radius+z)*cos(2*pi/HX*x), 
+//                                                  ry + (radius+z)*sin(2*pi/HX*x), y]);
+
+// mesh3 Th3 = movemesh3(HoneyStructureTh, transfo=[rx + (radius+z)*cos(2*pi/HY*y), 
+//                                                  ry + (radius+z)*sin(2*pi/HY*y), x]);
+                                                 
+//plot(Th3, wait=1);
+                       
