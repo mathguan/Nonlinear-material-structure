@@ -1,0 +1,919 @@
+//MeshFunc2D.edp
+/*
+							二阶双尺度均匀化计算的二维网格函数文件
+        包含单胞网格(以C开头)，均匀化网格(以H开头)，宏观网格(以M)开头。所有生成的网格以函数的形式给出，
+    用户只需调用相应的函数即可得到FreeFem++网格变量(mesh), 文件中所生成的区域包括复合区域、孔洞区域及
+    复合孔洞区域。设单胞区域为Y,一般情况下取Y=[0, 1]x[0, 1]，具体情况可参考各函数注释。复合区域即是在Y
+    中包含另一个闭区域S，S与Y-S可以标示两种不同的材料以达到模拟复合材料的目的。孔洞区域即是在Y中存在若
+    干孔洞，材料本身为各向同性材料；复合孔洞区域表示材料既是复合材料，区域又包含孔洞。
+*/
+
+macro LINE2D(Name, x1, y1, x2, y2, ref) border Name(t = 0, 1){x = (1 - t) * (x1) + t * (x2); y = (1 - t) * (y1) + t * (y2); label = (ref); } //线段
+macro RECT2D(B1, B2, B3, B4, ox, oy, w, h, l1, l2, l3, l4) 
+      LINE2D(B1, ox,   oy,   ox+w, oy,   l1)
+      LINE2D(B2, ox+w, oy,   ox+w, oy+h, l2)
+      LINE2D(B3, ox+w, oy+h, ox,   oy+h, l3)
+      LINE2D(B4, ox,   oy+h, ox,   oy,   l4) //长方形
+     
+macro Ellipse2D(Name, rx, ry, ra, rb, theta, ref) border Name(t = 0, 2*pi){x = (rx) + (ra)*cos(t)*cos(theta) - (rb)*sin(t)*sin(theta); 
+      	                                                                   y = (ry) + (ra)*cos(t)*sin(theta) + (rb)*sin(t)*cos(theta); 
+      	                                                                   label = (ref); } //任意转角的椭圆(包括圆)
+	
+/*func mesh CRectangle(real originX, real originY, 
+                     real width,   real height, 
+                     int nGrid0, bool isHole)
+                     
+说明: 单胞Y=[0, 1]x[0, 1]的内部区域为矩形的复合(isHole=0)或孔洞区域(isHole=1), 
+      其中该矩形左下角位置为(originX, originY),宽度为width, 高度为height.
+      单胞外边界按下、右、上、左的顺序编号为1, 2, 3, 4.
+      单胞内边界按下、右、上、左的顺序编号为11, 12, 13, 14.
+      (要求: width<1, height<1,orginX+width<1, orginY+height<1)
+
+变量说明：
+    originX -- 内部矩形左下角X坐标 
+    originY -- 内部矩形左下角Y坐标
+    width -- 内部矩形宽度(x方向长度, < 1)
+    height -- 内部矩阵高度(y方向长度, < 1)
+    nGrid0 -- 单胞外边界网格划分段数
+    isHole -- 内部矩形区域是否为孔洞
+*/
+func mesh CRectangle(real originX, real originY, 
+                     real width,   real height, 
+                     int nGrid0, bool isHole)
+{	
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+	//内边界
+	RECT2D(C11, C12, C13, C14, originX, originY, width, height, 11, 12, 13, 14)
+	
+	//内部矩阵边的划分段数
+	int nGrid1 = isHole?-nGrid0*width:nGrid0*width;
+	int nGrid2 = isHole?-nGrid0*height:nGrid0*height;
+	
+	mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +C11(nGrid1)+C12(nGrid2)+C13(nGrid1)+C14(nGrid2));
+    return Th;
+}
+//CRectangle 测试代码
+/*
+mesh Th = CRectangle(0.1, 0.1, 0.8, 0.8, 100, 0);
+plot(Th, wait=1);
+*/
+
+
+/*func mesh CEllipse(real rx, real ry, real a, real b, int nGrid0, int isHole)
+
+说明：内部材料区域为椭圆的复合(isHole=0)或孔洞区域(isHole=1),其中该椭圆的圆心位置为(rx,ry)
+      X半轴长a,Y单轴长b，若a=b则内部区域为圆形。
+      单胞外边界按下、右、上、左的顺序编号为1, 2, 3, 4
+      内部椭圆边界编号为10
+      
+变量说明：
+    rx      -- 圆心X坐标
+    ry      -- 圆心Y坐标
+    a       -- 椭圆X半轴长 
+    b       -- 椭圆Y半轴长
+    angle   -- 转角
+    nGrid0  -- 单胞外边界网格划分段数
+    isHole  -- 是否为孔洞
+*/
+func mesh CEllipse(real rx, real ry, real a, real b, real angle, int nGrid0, int isHole)
+{
+	//外边界	
+	RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+
+    //内边界
+    Ellipse2D(Ellipse, rx, ry, a, b, angle, 20)
+    	
+    real m = min(a, b);
+    real length = 2*pi*m + 4*abs(a-b);
+    //边界上网格划分段数
+	int nGrid1 = isHole? -length*nGrid0:length*nGrid0;
+
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                      +Ellipse(nGrid1));
+    return Th;
+}
+
+//CEllipse测试代码
+/*
+mesh CellTh = CEllipse(0.5, 0.5, 0.4, 0.3, pi/4, 100, 0);
+plot(CellTh, wait=1);
+*/
+
+
+/*func mesh CDiamond(real a, rea b,  int nGrid0, int isHole)
+
+说明: 内部材料区域为菱形的复合(isHole=0)或孔洞区域(isHole=1)，
+      其中该菱形中心位置为(0.5, 0.5), 其外接椭圆的x方向的半轴长a，
+      y方向的半轴长b.
+      单胞外边界按下、右、上、左的顺序编号为1, 2, 3, 4.
+      单胞内边界按下、右、上、左的顺序编号为11, 12, 13, 14.
+
+变量说明：
+	real a -- x方向半轴长
+	real b -- y方向半轴长
+	int nGrid0 -- 单胞外边界网格划分段数
+	int isHole -- 是否是孔洞
+
+*/
+func mesh CDiamond(real a, real b, int nGrid0, int isHole)
+{
+
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+	
+	//内边界
+	LINE2D(C11, 0.5,     0.5 - b, 0.5 + a, 0.5,     11)
+	LINE2D(C12, 0.5 + a, 0.5,     0.5,     0.5 + b, 12)
+	LINE2D(C13, 0.5,     0.5 + b, 0.5 - a, 0.5,     13)
+	LINE2D(C14, 0.5 - a, 0.5,     0.5,     0.5 - b, 14)
+	
+	//边界上网格划分段数
+	int nGrid1 = isHole? -sqrt(a^2+b^2)*nGrid0:sqrt(a^2+b^2)*nGrid0;
+	
+    mesh CellTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                      +C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1));
+    return CellTh;
+}
+//CDiamond测试代码
+/*
+mesh CellTh = CDiamond(0.3, 0.4, 100, 1);
+plot(CellTh, wait=1);
+*/
+
+/*func mesh CTriangle(real L, real tx, real ty, int nGrid, int isHole)
+
+说明: 内部材料区域为正三角形的复合(isHole=0)或孔洞区域(isHole=1)，
+      该正三角形边长为L，中心位置为(tx, ty)。 
+
+变量说明：
+	real L -- 正三角形边长
+	real tx, ty -- 正三角形中尺位置
+	int nGrid0 -- 单胞外边界网格划分段数
+	int isHole -- 是否是孔洞
+*/
+
+func mesh CTriangle(real L, real tx, real ty, int nGrid, int isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+	
+	//内边界
+	LINE2D(T1, tx - L/2, ty - sqrt(3)/6*L, tx + L/2, ty - sqrt(3)/6*L, 11)
+	LINE2D(T2, tx + L/2, ty - sqrt(3)/6*L, tx ,      ty + sqrt(3)/3*L, 12)
+	LINE2D(T3, tx ,      ty + sqrt(3)/3*L, tx - L/2, ty - sqrt(3)/6*L, 13)
+	
+	int tGrid = isHole?-nGrid*L:nGrid*L;
+	
+	mesh CellTh = buildmesh(C01(nGrid)+C02(nGrid)+C03(nGrid)+C04(nGrid)
+                      +T1(tGrid)+T2(tGrid)+T3(tGrid));
+	return CellTh;
+}
+
+//CTriangle测试代码
+/*
+mesh CellTh = CTriangle(0.5, 0.5, 0.5, 100, 1);
+plot(CellTh, wait=1);
+*/
+
+/*func mesh CStar(real radius, real sx, real sy, int nGrid, int isHole)
+说明: 内部材料区域为正五角形的复合(isHole=0)或孔洞区域(isHole=1)，
+      该正五角形外接圆半径，中心位置为(sx, sy)。  
+
+变量说明：
+	real radius -- 正五角形外接圆半径
+	real sx, sy -- 正三角形中尺位置
+	int nGrid0 -- 单胞外边界网格划分段数
+	int isHole -- 是否是孔洞
+*/
+func mesh CStar(real radius, real sx, real sy, int nGrid, int isHole)
+{	
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+
+	//(ax, ay)为五个外角的坐标，(bx, by)为五角星五个内角坐标
+	real[int] aX(5), aY(5), bX(5), bY(5);
+	real angle18 = 0.1*pi;
+	real angle36 = 0.2*pi;
+	real angle54 = 0.3*pi;
+	real angle72 = 0.4*pi;
+	real aLen = radius;
+	real bLen = aLen*sin(angle18)/sin(angle54);
+	
+	for(int i = 0; i < 5; i++)
+	{
+		aX[i] = aLen*cos(angle18 + angle72*i);
+		aY[i] = aLen*sin(angle18 + angle72*i);
+		bX[i] = bLen*cos(angle54 + angle72*i);
+		bY[i] = bLen*sin(angle54 + angle72*i);
+	}
+		
+	LINE2D(L1, aX[0] + sx, aY[0] + sy, bX[0] + sx, bY[0] + sy, 20)
+	LINE2D(L2, bX[0] + sx, bY[0] + sy, aX[1] + sx, aY[1] + sy, 20)
+	LINE2D(L3, aX[1] + sx, aY[1] + sy, bX[1] + sx, bY[1] + sy, 20)
+	LINE2D(L4, bX[1] + sx, bY[1] + sy, aX[2] + sx, aY[2] + sy, 20)
+	LINE2D(L5, aX[2] + sx, aY[2] + sy, bX[2] + sx, bY[2] + sy, 20)
+	LINE2D(L6, bX[2] + sx, bY[2] + sy, aX[3] + sx, aY[3] + sy, 20)
+	LINE2D(L7, aX[3] + sx, aY[3] + sy, bX[3] + sx, bY[3] + sy, 20)
+	LINE2D(L8, bX[3] + sx, bY[3] + sy, aX[4] + sx, aY[4] + sy, 20)
+	LINE2D(L9, aX[4] + sx, aY[4] + sy, bX[4] + sx, bY[4] + sy, 20)
+    LINE2D(L10, bX[4] + sx, bY[4] + sy, aX[0] + sx, aY[0] + sy, 20)
+	
+	real lenStar0 = sqrt(aLen^2 + bLen^2 - 2*aLen*bLen*cos(angle36));
+	int lenStar = isHole? -nGrid * lenStar0:nGrid * lenStar0;
+	mesh CellTh = buildmesh(C01(nGrid) + C02(nGrid) + C03(nGrid) + C04(nGrid)
+                      + L1(lenStar) + L2(lenStar) +  L3(lenStar) + L4(lenStar) + L5(lenStar)
+                      + L6(lenStar) + L7(lenStar) + L8(lenStar) + L9(lenStar) + L10(lenStar));
+    return CellTh;
+}
+//CStar测试代码
+/*
+mesh CellTh = CStar(0.3, 0.5, 0.5, 100, 1);
+plot(CellTh, wait=1);
+*/
+
+/*func mesh CRectangleHoleCompo(real M1x, real M1y,
+                              		real M1Width, real M1Height,
+                              		real M2x, real M2y,
+                              		real M2Width, real M2Height,
+                              		int nGrid0)
+说明： 孔洞复合材料,内部孔洞区域为[M1x, M1y]x[M1x+M1Width, M1y+M1Height]
+       单胞内分为两个区域，由[M2x, M2y]x[M2x+M2Width, M2y+M2Height]的边界分开
+       单胞外边界按下、右、上、左的顺序编号为1, 2, 3, 4.
+       单胞内孔洞边界按下、右、上、左的顺序编号为11, 12, 13, 14.
+变量说明：
+    M1x, M1y -- 内部孔洞x,y坐标
+    M1Width, M1Height -- 内部孔洞宽度，高度
+    M2x, M2y -- 内部矩形x,y坐标
+    M2Width, M2Height -- 内部矩形宽度，高度
+    nGrid0 -- 单胞外边界网格划分段数
+*/
+func mesh CRectangleHoleCompo(real M1x, real M1y,
+                              real M1Width, real M1Height,
+                              real M2x, real M2y,
+                              real M2Width, real M2Height,
+                              int nGrid0)
+{
+	
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+	
+	//内部孔洞边界
+	RECT2D(C11, C12, C13, C14, M1x, M1y, M1Width, M1Height, 11, 12, 13, 14)
+	//内边界
+	RECT2D(C21, C22, C23, C24, M2x, M2y, M2Width, M2Height, 21, 22, 23, 24)
+	
+	//边界上网格划分段数
+	int nGrid1 = nGrid0*M1Width*(-1);
+	int nGrid2 = nGrid0*M2Width;
+
+	mesh CellTh = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+    	                   +C11(nGrid1)+C12(nGrid1)+C13(nGrid1)+C14(nGrid1)
+        	               +C21(nGrid2)+C22(nGrid2)+C23(nGrid2)+C24(nGrid2));
+    return CellTh;
+}
+//CRectangleHoleCompo测试代码
+/*
+mesh CellTh = CRectangleHoleCompo(0.25, 0.25, 0.5, 0.5,
+                                 	  0.1, 0.1, 0.8, 0.8,
+                                     100);
+plot(CellTh, wait=1);
+int RM1 = CellTh(0.01, 0.01).region;
+int RM2 = CellTh(0.1 + 0.01, 0.1 + 0.01).region;
+cout << "RM1 = " << RM1 << endl;
+cout << "RM2 = " << RM2 << endl;
+*/
+
+
+/* func mesh CLayeredX(real ratio, int nGrid)
+说明: 层状复合材料单胞，材料在x方向上保持一致，沿y方向呈现层状特性，ratio给出材料1所占比例
+
+变量说明：
+    ratio -- 材料1所占比例
+    nGrid -- 单胞外边界网格划分段数
+*/
+func mesh CLayeredX(real ratio, int nGrid)
+{
+	mesh Th1 = square(nGrid, ratio*nGrid, [x, ratio*y]);
+	int[int] L1 = [3, 0];
+	int r1 = Th1(0.01, 0.01).region;
+	int[int] R1 = [r1, 1];
+	Th1 = change(Th1, label=L1, region=R1);
+    
+	mesh Th2 = square(nGrid, (1-ratio)*nGrid, [x, (1-ratio)*y+ratio]);
+	int[int] L2 = [1, 0];
+    int r2 = Th2(0.01, 0.01).region;
+    int[int] R2 = [r2, 6];
+    Th2 = change(Th2, label=L2, region=R2);
+    
+    Th1 = Th1 + Th2;
+    return Th1;
+}
+//CLayeredX测试代码
+/*
+mesh ThLayX = CLayeredX(0.4, 40);
+plot(ThLayX, wait=1);
+*/
+
+/* func mesh C2Circles(real rx1, real ry1, real radius1, real rx2, real ry2, real radius2, int nGrid0, int isHole)
+说明：内部区域为两个圆的复合或孔洞区域
+变量说明：
+    rx1      -- 圆1圆心X坐标
+    ry1      -- 圆1心Y坐标
+    radius1  -- 圆1半径
+    rx2      -- 圆2圆心X坐标
+    ry2      -- 圆2心Y坐标
+    radius2  -- 圆2半径
+例:
+   
+*/
+func mesh C2Circles(real rx1, real ry1, real radius1, real rx2, real ry2, real radius2, int nGrid0, int isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+
+	//内边界
+	Ellipse2D(Circle1, rx1, ry1, radius1, radius1, 0.0, 30)
+	Ellipse2D(Circle2, rx2, ry2, radius2, radius2, 0.0, 31)
+	
+	//边界上网格划分段数
+	int nGrid1 = isHole?-2*pi*radius1*nGrid0:2*pi*radius1*nGrid0;
+	int nGrid2 = isHole?-2*pi*radius2*nGrid0:2*pi*radius2*nGrid0;
+
+	mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+	                   +Circle1(nGrid1)+Circle2(nGrid2));
+	if(!isHole)
+	{
+	    int RM1 = Th(0.5, 0.5).region;
+	    int RM2 = Th(0.25, 0.25).region;
+	    int RM3 = Th(0.75, 0.75).region;
+	    int[int] R1 = [RM1, 4, RM2, 0, RM3, 0];
+	    Th = change(Th, region=R1);
+	}
+	return Th;
+}
+func mesh CCircle2Holes (real rx1, real ry1, real radius1, real rx2, real ry2, real radius2, int nGrid)
+{
+	//mesh Th = C2Circles(0.25, 0.25, 0.2, 0.75, 0.75, 0.2, 30, 1);
+	mesh Th = C2Circles(rx1, ry1, radius1, rx2, ry2, radius2, nGrid ,1);
+	return Th;
+}
+ func mesh CCircle(real rx, real ry, real radius, int nGrid0, int isHole)
+    {
+	   //外边界
+  	   border C01(t=0, 1) {x=t; y=0;label=1;}
+	   border C02(t=0, 1) {x=1; y=t;label=2;}
+	   border C03(t=0, 1) {x=(1-t); y=1;label=3;}
+	   border C04(t=0, 1) {x=0; y=1-t;label=4;}
+
+	   //内边界
+	   border Circle(t=0, 2*pi) {x=rx+radius*cos(t); y=ry+radius*sin(t);}
+
+       //边界上网格划分段数
+	   int nGrid1 = 2*nGrid0;
+	   if(isHole == 1)
+	     {
+		  nGrid1 = -nGrid1;
+	     }
+       mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +Circle(nGrid1));	
+       return Th;
+    }
+
+func mesh Rectangle2(real originX, real originY,real width, real height, 
+                      int buttom, int right, int top, int left, int nGrid1, int nGrid2)
+    {
+	
+        //边界
+	    border C01(t=0, 1) {x=originX+width*t;     y=originY;             label = buttom;}
+	    border C02(t=0, 1) {x=originX+width;       y=originY+height*t;    label = right;}
+	    border C03(t=0, 1) {x=originX+width*(1-t); y=originY+height;      label = top;}
+	    border C04(t=0, 1) {x=originX;             y=originY+height*(1-t);label = left;}
+	    mesh Th = buildmesh(C01(nGrid1)+C02(nGrid2)+C03(nGrid1)+C04(nGrid2));
+	    return Th;
+    }
+//CCircle2Holes测试代码
+/*
+mesh CellTh = C2Circles(0.25, 0.25, 0.2, 0.75, 0.75, 0.2, 30, 1);
+plot(CellTh, wait=1);
+*/
+
+/*
+func mesh CRegularPolygon3(real radius, real initialPhase, int nGrid0, bool isHole)
+说明：以下CRegularPolygon3 --- CRegularPolygon10表示嵌入区域为正三边形至正十边形的复合与孔洞材料，
+      根据棣莫弗（de Moivre）定理，正多边形的各顶点为
+          (rx + r*cos(2*pi/n*i + phi), ry + r*sin*(2*pi/n*i + phi))
+      其中rx, ry表示正多边形外接圆圆心，这都均取为(0.5, 0.5), r为外接圆半径，n为正多边形边数，
+      i=1, ..., n, phi为初始转动角度。由于FreeFem++中border不能动态定义，故这里写成CRegularPolygon3至
+      CRegularPolygon10共八个函数，利用该公式也可以定义任意边数大于2的正多边形嵌入复合区域。 
+变量说明：
+    radius -- 正多边形外接圆半径
+    initialPhase -- 初始转动角度，弧度制
+    nGrid -- 网格划分密度
+    isHole -- 是否是孔洞
+*/
+func mesh CRegularPolygon3(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 3;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[0], rY[0], 103)
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1));
+    return Th;
+}
+//CRegularPolygon3测试代码
+/*
+mesh Th = CRegularPolygon3(0.3, pi/2, 100, 1);
+plot(Th, wait=1);
+*/
+
+
+func mesh CRegularPolygon4(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 4;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[3], rY[3], 103)
+    LINE2D(P4, rX[3], rY[3], rX[0], rY[0], 104)
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1)+P4(nGrid1));
+    return Th;
+}
+//CRegularPolygon4测试代码
+/*
+mesh Th = CRegularPolygon4(0.3, pi/4, 100, 0);
+plot(Th, wait=1);
+*/
+
+
+func mesh CRegularPolygon5(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 5;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[3], rY[3], 103)
+    LINE2D(P4, rX[3], rY[3], rX[4], rY[4], 104)
+    LINE2D(P5, rX[4], rY[4], rX[0], rY[0], 105)
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1)+P4(nGrid1)+P5(nGrid1));
+    return Th;
+}
+//CRegularPolygon5测试代码
+/*
+mesh Th = CRegularPolygon5(0.3, pi/10, 100, 0);
+plot(Th, wait=1);
+*/
+
+func mesh CRegularPolygon6(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 6;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[3], rY[3], 103)
+    LINE2D(P4, rX[3], rY[3], rX[4], rY[4], 104)
+    LINE2D(P5, rX[4], rY[4], rX[5], rY[5], 105)
+    LINE2D(P6, rX[5], rY[5], rX[0], rY[0], 106)
+    
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1)+P4(nGrid1)+P5(nGrid1)+P6(nGrid1));
+    return Th;
+}
+//CRegularPolygon6测试代码
+/*
+mesh Th = CRegularPolygon6(0.3, 0, 100, 0);
+plot(Th, wait=1);
+*/
+
+func mesh CRegularPolygon7(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 7;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[3], rY[3], 103)
+    LINE2D(P4, rX[3], rY[3], rX[4], rY[4], 104)
+    LINE2D(P5, rX[4], rY[4], rX[5], rY[5], 105)
+    LINE2D(P6, rX[5], rY[5], rX[6], rY[6], 106)
+    LINE2D(P7, rX[6], rY[6], rX[0], rY[0], 107)
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1)+P4(nGrid1)+P5(nGrid1)+P6(nGrid1)+P7(nGrid1));
+    return Th;
+}
+//CRegularPolygon7测试代码
+/*
+mesh Th = CRegularPolygon7(0.3, 0, 100, 0);
+plot(Th, wait=1);
+*/
+
+func mesh CRegularPolygon8(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 8;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[3], rY[3], 103)
+    LINE2D(P4, rX[3], rY[3], rX[4], rY[4], 104)
+    LINE2D(P5, rX[4], rY[4], rX[5], rY[5], 105)
+    LINE2D(P6, rX[5], rY[5], rX[6], rY[6], 106)
+    LINE2D(P7, rX[6], rY[6], rX[7], rY[7], 107)
+    LINE2D(P8, rX[7], rY[7], rX[0], rY[0], 108)
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1)+P4(nGrid1)+P5(nGrid1)+P6(nGrid1)+P7(nGrid1)+P8(nGrid1));
+    return Th;
+}
+//CRegularPolygon8测试代码
+/*
+mesh Th = CRegularPolygon8(0.3, 0, 100, 0);
+plot(Th, wait=1);
+*/
+
+func mesh CRegularPolygon9(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 9;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[3], rY[3], 103)
+    LINE2D(P4, rX[3], rY[3], rX[4], rY[4], 104)
+    LINE2D(P5, rX[4], rY[4], rX[5], rY[5], 105)
+    LINE2D(P6, rX[5], rY[5], rX[6], rY[6], 106)
+    LINE2D(P7, rX[6], rY[6], rX[7], rY[7], 107)
+    LINE2D(P8, rX[7], rY[7], rX[8], rY[8], 108)
+    LINE2D(P9, rX[8], rY[8], rX[0], rY[0], 109)
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1)+P4(nGrid1)+P5(nGrid1)+P6(nGrid1)+P7(nGrid1)+P8(nGrid1)+P9(nGrid1));
+    return Th;
+}
+//CRegularPolygon9测试代码
+/*
+mesh Th = CRegularPolygon9(0.3, 0, 100, 0);
+plot(Th, wait=1);
+*/
+
+func mesh CRegularPolygon10(real radius, real initialPhase, int nGrid0, bool isHole)
+{
+	//外边界
+    RECT2D(C01, C02, C03, C04, 0, 0, 1, 1, 1, 2, 3, 4)
+    
+    int n = 10;
+    real[int] rX(n), rY(n);
+    for(int i = 0; i < n; i++)
+    {
+    	rX[i] = 0.5 + radius*cos(2*pi/n*i + initialPhase);
+    	rY[i] = 0.5 + radius*sin(2*pi/n*i + initialPhase);
+    }
+    
+    LINE2D(P1, rX[0], rY[0], rX[1], rY[1], 101)
+    LINE2D(P2, rX[1], rY[1], rX[2], rY[2], 102)
+    LINE2D(P3, rX[2], rY[2], rX[3], rY[3], 103)
+    LINE2D(P4, rX[3], rY[3], rX[4], rY[4], 104)
+    LINE2D(P5, rX[4], rY[4], rX[5], rY[5], 105)
+    LINE2D(P6, rX[5], rY[5], rX[6], rY[6], 106)
+    LINE2D(P7, rX[6], rY[6], rX[7], rY[7], 107)
+    LINE2D(P8, rX[7], rY[7], rX[8], rY[8], 108)
+    LINE2D(P9, rX[8], rY[8], rX[9], rY[9], 109)
+    LINE2D(P10, rX[9], rY[9], rX[0], rY[0], 110)
+    
+    real l = radius*sqrt(2*(1-cos(2*pi/n)));
+    int nGrid1 = isHole?-l*nGrid0:l*nGrid0;
+    mesh Th = buildmesh(C01(nGrid0)+C02(nGrid0)+C03(nGrid0)+C04(nGrid0)
+                       +P1(nGrid1)+P2(nGrid1)+P3(nGrid1)+P4(nGrid1)+P5(nGrid1)+P6(nGrid1)+P7(nGrid1)+P8(nGrid1)+P9(nGrid1)+P10(nGrid1));
+    return Th;
+}
+//CRegularPolygon10测试代码
+/*
+mesh Th = CRegularPolygon10(0.3, 0, 100, 0);
+plot(Th, wait=1);
+*/
+
+/*func mesh HRectangle(real originX, real originY,
+                     real width, real height, 
+                     int nGrid1, int nGrid2)
+说明: 矩阵均匀化区域，左下角位置为(originX, originY), 宽度为width, 高度为height
+      外边界按下、右、上、左的顺序编号为1, 2, 3, 4.
+      nGrid1与nGrid2控制x与y方向剖分的段数
+      (要求: width>0, height>0)
+
+变量说明：
+    originX -- 矩形左下角X坐标 
+    originY -- 矩形左下角Y坐标
+    width -- 矩形宽度
+    height -- 矩阵高度
+    nGrid1 -- x方向划分段数
+    nGrid2 -- y方向划分段数
+*/
+func mesh HRectangle(real originX, real originY,
+                     real width, real height, 
+                     int nGrid1, int nGrid2)
+{	
+	RECT2D(C01, C02, C03, C04, originX, originY, width, height, 1, 2, 3, 4)
+	mesh Th = buildmesh(C01(nGrid1)+C02(nGrid2)+C03(nGrid1)+C04(nGrid2));
+	return Th;
+}
+//HRectangle测试代码
+/*
+mesh Th = HRectangle(0, 0, 8, 1, 80, 10);
+plot(Th, wait=1);
+*/
+
+/*func mesh extendXY(mesh BasicTh, int n, int m, 
+                   real thWidth, real thHeight)
+说明：基于已生成的二维网格BasicTh向X方向复制n个，向Y方向复制m个，最后构成新的网格，用于生成宏观网格
+      (要录：BasicTh网格外轮廓为矩形，四边边界按下，右，上，左顺序编号为1, 2, 3, 4)
+变量说明：
+    BasicTh -- 宏观下单胞网格
+    n -- x方向周期数
+    m -- y方向周期数
+    thWidth -- BasicTh网格x方向长度
+    thHeight -- BasicTh网格y方向长度
+*/
+func mesh extendXY(mesh BasicTh, int n, int m, real thWidth, real thHeight)
+{
+	mesh Th0 = BasicTh;
+    int[int] L1 = [2, 0], L2 = [4, 0];
+    for(int i = 1; i < n; i++)
+    {
+	    mesh Th1 = movemesh(BasicTh, [x+i*thWidth, y]);
+	    Th0 = change(Th0, label = L1);
+	    Th1 = change(Th1, label = L2);
+	    Th0 = Th0 +Th1;
+	 }
+	 
+	 mesh ThTemp = Th0;
+	 L1[0] = 3;L2[0] = 1;
+     for(int i=1; i < m; i++)
+     {
+		 mesh Th1 = movemesh(ThTemp, [x, y+i*thHeight]);
+		 Th0 = change(Th0, label = L1);
+		 Th1 = change(Th1, label = L2);
+		 Th0 = Th0 +Th1;	
+	}
+    return Th0;	
+}
+
+/*func mesh MRectangle(int m, int n, 
+                     int nGrid0, int nGrid1,
+                     real M2x,real M2y,
+                     real M2Width,real M2Height,
+                     int isHole)
+说明：宏观周期复合区域(isHole=0)或孔洞区域(isHole=1), 在区域[0, m]x[0, n]上划分m x n个周期单胞，
+      单胞为Y=[0, 1]x[0, 1], 该单胞为内部区域为矩形的复合(isHole=0)
+      或孔洞区域(isHole=1), 其中的矩形左下角位置为(M2x, M2y),宽度为M2Width, 高度为M2Hheight。
+      
+      区域外边界按下、右、上、左的顺序编号为1, 2, 3, 4.
+      各个单胞内边界按下、右、上、左的顺序编号均为11, 12, 13, 14.
+      
+      一般与函数CRectangle一起使用。要求nGrid0/m=nGrid1/n
+
+变量说明：
+	m -- x方向周期数
+    n -- y方向周期数
+    nGrid0 -- x方向划分段数
+    nGrid1 -- y方向划分段数
+    M2x -- 内部矩形左下角X坐标 
+    M2y -- 内部矩形左下角Y坐标
+    M2Width -- 内部矩形宽度(x方向长度, < 1)
+    M2Hheight -- 内部矩阵高度(y方向长度, < 1)
+    isHole -- 是否为孔洞区域
+*/
+func mesh MRectangle(int m, int n, 
+                     int nGrid0,
+                     real M2x,real M2y,
+                     real M2Width,real M2Height,
+                     int isHole)
+{
+	mesh BasicTh = CRectangle(M2x, M2y, M2Width, M2Height, nGrid0, isHole);
+    return extendXY(BasicTh, m, n, 1, 1);
+}
+
+//MRectangle测试代码
+/*
+mesh MacroTh = MRectangle(25, 4, 20, 0.25, 0.25, 0.5, 0.5, 0);
+plot(MacroTh, wait=1);
+*/
+
+/*
+func mesh MTriangle(int m, int n, int nGrid0, real L, real tx, real ty, int isHole)
+说明: 利用CTriangle生成的三角形嵌入/孔洞单胞网格生成的周期性复合/孔洞网格
+变量说明:
+    m -- x方向周期数
+    n -- y方向周期数
+    nGrid0 -- x方向划分段数
+    L -- 归一化单胞中正三角形边长
+	tx, ty -- 归一化单胞中正三角形中心位置
+	isHole -- 是否是孔洞
+*/
+func mesh MTriangle(int m, int n, int nGrid0, real L, real tx, real ty, int isHole)
+{
+	mesh BasicTh = CTriangle(L, tx, ty, nGrid0, isHole);
+	return extendXY(BasicTh, m, n, 1, 1);
+}
+//MTriangle测试代码
+/*
+mesh MacroTh = MTriangle(8, 8, 20, 0.5, 0.5, 0.5, 0);
+plot(MacroTh, wait=1);
+*/
+
+
+/*
+func mesh MacroMeshRectangle(int n, int nGrid0, real M2x,real M2y,real M2Width,real M2Height,int isHole)
+说明: 在[0, 1]x[0, 1]中生成nxn个矩形嵌入的周期复合/孔洞区域网格
+变量说明: 
+    int n -- 周期数
+    int nGrid0 -- 一个小单胞的网格边界划分断数
+    real M2x, M2y -- 归一化单胞内部矩形的左下角坐标
+    real M2Width -- 归一化单胞内部矩形的宽度
+    real M2Height -- 归一化单胞内部矩形的高度
+    int isHole -- 是否是孔洞
+*/
+func mesh MacroMeshRectangle(int n, int nGrid0, real M2x,real M2y,real M2Width,real M2Height,int isHole)
+{
+	mesh Th = MRectangle(n, n, nGrid0, M2x, M2y, M2Width, M2Height, isHole);
+	Th = movemesh(Th, [1./n*x, 1./n*y]);
+	return Th;
+}
+// MacroMeshRectangle测试代码
+/*
+mesh MacroTh = MacroMeshRectangle(8, 20, 0.25, 0.25, 0.5, 0.5, 0);
+plot(MacroTh, wait=1);
+*/
+
+/*
+func mesh MEllipse(int m, int n, int nGrid0, real rx, real ry, real a, real b, real angle, int isHole)
+说明: 利用CEllipse生成的椭圆嵌入/孔洞单胞网格生成的周期性复合/孔洞网格, 
+      若在x方向单胞数为m, y方向单胞数为n, 生成的区域为[0, m]x[0, n].
+变量说明: 
+    m       -- x方向单胞数 
+    n       -- y方向单胞数
+    nGrid0   -- 归一化单胞外边界网格划分段数
+    rx      -- 归一化单胞圆心X坐标
+    ry      -- 归一化单胞圆心Y坐标
+    a       -- 归一化单胞椭圆X半轴长 
+    b       -- 归一化单胞椭圆Y半轴长
+    angle   -- 椭圆转角
+    isHole  -- 是否为孔洞
+*/
+func mesh MEllipse(int m, int n, 
+                  int nGrid0, 
+                  real rx, real ry,
+                  real a, real b,
+                  real angle, 
+                  int isHole)
+{
+	mesh BasicTh = CEllipse(rx, ry, a, b, angle, nGrid0, isHole);
+	return extendXY(BasicTh, m, n, 1, 1);
+}
+//MEllipse测试代码
+/*
+mesh MacroTh = MEllipse(8, 8, 20, 0.5, 0.5, 0.3, 0.2, pi/4, 0);
+plot(MacroTh, wait=1);
+*/
+
+/*
+func mesh MDiamond(int m, int n, int nGrid0, real a, real b, int isHole)
+说明: 利用CDiamond生成的椭圆嵌入/孔洞单胞网格生成的周期性复合/孔洞网格, 
+      若在x方向单胞数为m, y方向单胞数为n, 生成的区域为[0, m]x[0, n].
+变量说明: 
+    m       -- x方向单胞数 
+    n       -- y方向单胞数
+    nGrid0   -- 归一化单胞外边界网格划分段数
+    a       -- 归一化单胞内部菱形X半轴长 
+    b       -- 归一化单胞内部菱形Y半轴长
+    isHole  -- 是否为孔洞
+*/
+func mesh MDiamond(int m, int n, 
+                   int nGrid0, 
+                   real a, real b, 
+                   int isHole)
+{
+	mesh BasicTh = CDiamond(a, b, nGrid0, isHole);
+	return extendXY(BasicTh, m, n, 1, 1);
+}
+//MDiamond测试代码
+/*
+mesh MacroTh = MDiamond(10, 2, 20, 0.4, 0.3, 1);
+plot(MacroTh, wait=1);
+*/
+
+/*
+func mesh MRectangleHoleCompo(int m, int n, 
+                              int nGrid0,
+                              real M1x, real M1y,
+                              real M1Width, real M1Height,
+                              real M2x, real M2y,
+                              real M2Width, real M2Height
+                              )
+说明:  利用MRectangleHoleCompo生成的椭圆嵌入/孔洞单胞网格生成的周期性复合/孔洞网格,                          
+变量说明：
+    m       -- x方向单胞数 
+    n       -- y方向单胞数
+    nGrid0  -- 归一化单胞外边界网格划分段数
+    M1x, M1y -- 内部孔洞x,y坐标
+    M1Width, M1Height -- 内部孔洞宽度，高度
+    M2x, M2y -- 内部矩形x,y坐标
+    M2Width, M2Height -- 内部矩形宽度，高度                  
+*/
+func mesh MRectangleHoleCompo(int m, int n, 
+                              int nGrid0,
+                              real M1x, real M1y,
+                              real M1Width, real M1Height,
+                              real M2x, real M2y,
+                              real M2Width, real M2Height
+                              )
+{
+	mesh BasicTh = CRectangleHoleCompo(M1x, M1y, M1Width, M1Height,
+	                                   M2x, M2y, M2Width, M2Height,
+	                                   nGrid0);
+	return extendXY(BasicTh, m, n, 1, 1);              
+}
