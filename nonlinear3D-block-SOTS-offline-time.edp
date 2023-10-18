@@ -1,0 +1,2033 @@
+load "msh3"
+load "Morley"
+load "UMFPACK64"
+load "medit"
+include "cube.idp" 
+include "../Nonlinear-material-structure/MeshFile/MeshFunc3D.edp"
+include "../Nonlinear-material-structure/MeshFile/MeshFunc2D.edp"
+//材料系数与温度呈二次函数增长关系
+//从线性增长关系的Ma、Mb增加到Ma、Mb、Mc,其中Mc为二次关系中的系数
+//****************************************************²1.非线性材料参数(start)***********************************
+//参考初始温度
+real intiT=373.15;
+//材料系数与温度呈二次函数增长关系
+//从线性增长关系的Ma、Mb增加到Ma、Mb、Mc,其中Mc为二次关系中的系数
+/* real Ma1=250.0e-2, Ma2=8.0e-2, Mb1=0.21e-5*16.1988, Mb2=0.017e-2*7.2727, Mc1=0.116e-8*16.1988, Mc2=0.0*7.2727;                //M:热传导系数
+real Ea1 = 350.0e5, nu1=0.25, Eb1 =-50.3e2*2.6475, Ec1=-8.1e-1*2.6475;                         //E,nu杨氏模量和泊松比
+real Ea2 = 220.0e5, nu2=0.20, Eb2 =-5.65e2*1.7930, Ec2=0.0*1.7930;  //其中a代表线性增长关系的常数项,b表示线性关系中的一次项系数,c代表二次关系中的二次项系数
+real lambda1 = Ea1*nu1/(1-nu1^2), lambdb1 = Eb1*nu1/(1-nu1^2), lambdc1 = Ec1*nu1/(1-nu1^2); //lambda,mu两个拉梅常数 
+real mua1 = Ea1/(2*(1+nu1)), mub1 = Eb1/(2*(1+nu1)), muc1 = Ec1/(2*(1+nu1));
+real lambda2 = Ea2*nu2/(1-nu2^2), lambdb2 = Eb2*nu2/(1-nu2^2), lambdc2 = Ec2*nu2/(1-nu2^2);
+real mua2 = Ea2/(2*(1+nu2)), mub2 = Eb2/(2*(1+nu2)), muc2 = Ec2/(2*(1+nu2));
+real beta1=147.00, beta2=113.67, betb1=-7.4864e-1*0.2788, betb2=1.6166e-1*0.5262, betc1=5.0306e-4*0.2788, betc2=-0.7821e-4*0.5262;         //热模量
+real deta1=147.00*intiT, deta2=113.67*intiT, detb1=-7.4864e-1*intiT*0.2788, detb2=1.6166e-1*intiT*0.5262, detc1=5.0306e-4*intiT*0.2788, detc2=-0.7821e-4*intiT*0.5262;         //双向耦合模量
+real pca1=2.1186, pca2=1.2496, pcb1=2.9073e-3*2.1144, pcb2=3.8808e-3*0.8078, pcc1=-2.2637e-6*2.1144, pcc2=-4.3051e-6*0.8078;              //pc:两种材料的密度和比热乘积rho*c,热传导方程需要                
+real rho1=3.21e-3, rho2=1.76e-3;  */
+real Ma1=250.0e-2, Ma2=8.0e-2, Mb1=0.02728e-2, Mb2=0.02535e-2, Mc1=0.0, Mc2=0.0;                //M:热传导系数
+real Ea1 = 350.0e5, nu1=0.25, Eb1 =-3.0435e3, Ec1=0.0;                         //E,nu杨氏模量和泊松比
+real Ea2 = 220.0e5, nu2=0.20, Eb2 =-1.1018e1, Ec2=0.0;  //其中a代表线性增长关系的常数项,b表示线性关系中的一次项系数,c代表二次关系中的二次项系数
+real lambda1 = Ea1*nu1/(1-nu1^2), lambdb1 = Eb1*nu1/(1-nu1^2), lambdc1 = Ec1*nu1/(1-nu1^2); //lambda,mu两个拉梅常数 
+real mua1 = Ea1/(2*(1+nu1)), mub1 = Eb1/(2*(1+nu1)), muc1 = Ec1/(2*(1+nu1));
+real lambda2 = Ea2*nu2/(1-nu2^2), lambdb2 = Eb2*nu2/(1-nu2^2), lambdc2 = Ec2*nu2/(1-nu2^2);
+real mua2 = Ea2/(2*(1+nu2)), mub2 = Eb2/(2*(1+nu2)), muc2 = Ec2/(2*(1+nu2));
+//real beta1=147.00, beta2=113.67, betb1=1.2460, betb2=-57.53e-4, betc1=-10.8808e-4, betc2=0.0817e-4;         //热模量
+//real deta1=147.00*intiT, deta2=113.67*intiT, detb1=1.2460*intiT, detb2=-57.53e-4*intiT, detc1=-10.8808e-4*intiT, detc2=0.0817e-4*intiT;         //双向耦合模量
+real beta1=3.5e-4, beta2=0.9273, betb1=0.0, betb2=-57.53e-4, betc1=0.0, betc2=0.0817e-4;         //热模量
+real deta1=beta1*intiT, deta2=beta2*intiT, detb1=betb1*intiT, detb2=betb2*intiT, detc1=betc1*intiT, detc2=betc2*intiT;
+//real beta1=-127.93, beta2=0.9273, betb1=1.2460, betb2=-57.53e-4, betc1=-10.8808e-4, betc2=0.0817e-4;         //热模量
+//real deta1=-127.93*intiT, deta2=0.9273*intiT, detb1=1.2460*intiT, detb2=-57.53e-4*intiT, detc1=-10.8808e-4*intiT, detc2=0.0817e-4*intiT;
+real pca1=2.1186, pca2=1.2496, pcb1=2.9073e-3*2.1144, pcb2=3.8808e-3*0.8078, pcc1=-2.2637e-6*2.1144, pcc2=-4.3051e-6*0.8078;              //pc:两种材料的密度和比热乘积rho*c,热传导方程需要                
+real rho1=3.21e-3, rho2=1.76e-3;
+//********二次函数材料系数宏*********
+macro material(a,b,c,RET) (a+b*RET+c*RET*RET)//
+//********线性材料系数宏
+//应变宏
+macro strain(u1,u2,u3) [dx(u1),dy(u2),dz(u3),dy(u1)+dx(u2),dz(u2)+dy(u3),dx(u3)+dz(u1)]//
+//各向异性材料柔度矩阵
+macro H(Ee11,Ee22,Ee33,v12,v23,v13,Gg12,Gg23,Gg31)[[1.0/Ee11, (-1.0)*v12/Ee11, (-1.0)*v13/Ee11, 0.0, 0.0, 0.0],
+                                                      [(-1.0)*v12/Ee11, 1.0/Ee22, (-1.0)*v23/Ee22, 0.0, 0.0, 0.0],
+                                                        [(-1.0)*v13/Ee11, (-1.0)*v23/Ee22, 1.0/Ee33, 0.0, 0.0, 0.0],
+					                                       [0.0, 0.0, 0.0, 1.0/Gg12, 0.0, 0.0],
+								                              [0.0, 0.0, 0.0, 0.0, 1.0/Gg23, 0.0],
+                                                                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0/Gg31]]//
+//对于各向同性材料有E=E11=E22=E33,v=Nu12=Nu23=Nu31,G=G12=G23=G31=E/2(1+v);
+macro HH(E,V)[[1.0/E, (-1.0)*V/E, (-1.0)*V/E , 0, 0, 0],
+                                                      [(-1.0)*V/E, 1.0/E ,(-1.0)*V/E, 0.0 ,0.0 ,0.0],
+                                                        [(-1.0)*V/E ,(-1.0)*V/E, 1.0/E ,0.0, 0.0 ,0.0],
+					                                       [0.0, 0.0, 0.0, 2.0*(1+V)/E, 0.0, 0.0],
+								                              [0.0, 0.0, 0.0, 0.0, 2.0*(1+V)/E, 0.0],
+                                                                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0*(1+V)/E]]//
+//刚度矩阵宏
+macro C(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[[kc11,kc12,kc13,0.0,0.0,0.0],
+   [kc21,kc22,kc23,0.0,0.0,0.0],
+       [kc31,kc32,kc33,0.0,0.0,0.0],
+            [0.0,0.0,0.0,kc44,0.0,0.0],
+               [0.0,0.0,0.0,0.0,kc55,0.0],
+                  [0.0,0.0,0.0,0.0,0.0,kc66]]//
+//生成刚度矩阵每一行的宏命令
+//各向异性材料和各向同性材料为相同的宏命令
+macro C1(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[kc11,kc12,kc13,0.0,0.0,0.0]//
+macro C2(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[kc21,kc22,kc23,0.0,0.0,0.0]//
+macro C3(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[kc31,kc32,kc33,0.0,0.0,0.0]//
+macro C4(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[0.0,0.0,0.0,kc44,0.0,0.0]//
+macro C5(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[0.0,0.0,0.0,0.0,kc55,0.0]//
+macro C6(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[0.0,0.0,0.0,0.0,0.0,kc66]//
+
+/* //应变宏
+macro strain(u1, u2) [dx(u1), dy(u2), dy(u1) + dx(u2)]   //EOM
+//刚度矩阵宏
+macro C(E1,E2,E3,nu,RET) [[material(E1,E2,E3,RET)/(1-nu^2),    material(E1,E2,E3,RET)*nu/(1-nu^2), 0],
+                          [material(E1,E2,E3,RET)*nu/(1-nu^2), material(E1,E2,E3,RET)/(1-nu^2),    0],
+                                         [0,             0,             material(E1,E2,E3,RET)/(2*(1+nu))]] //EOM
+macro Con11(E1,E2,E3,nu,RET) [material(E1,E2,E3,RET)/(1-nu^2), material(E1,E2,E3,RET)*nu/(1-nu^2), 0] //EOM
+macro Con12(E1,E2,E3,nu,RET) [0         , 0            , material(E1,E2,E3,RET)/(2*(1+nu))] //EOM
+macro Con21(E1,E2,E3,nu,RET) [0         , 0            , material(E1,E2,E3,RET)/(2*(1+nu))] //EOM
+macro Con22(E1,E2,E3,nu,RET) [material(E1,E2,E3,RET)*nu/(1-nu^2), material(E1,E2,E3,RET)/(1-nu^2), 0] //EOM */
+/* real[int, int] MMa1 = C(Ea1, Eb1, nu1, intiT);
+cout << "Constitute Matrix M1: " << endl;
+cout << MMa1 << endl;
+real[int, int] MMa2 = C(Ea2, Eb2, nu2, intiT);
+cout << "Constitute Matrix M2: " << endl;
+cout << MMa2 << endl; */
+//2.将柔度矩阵通过矩阵求逆转化为刚度矩阵
+//矩阵求逆函数
+func real[int,int] inverse(real[int,int] &vec)
+{
+	
+	//vec为已生成的柔度矩阵为对称正定矩阵
+    //利用已有算法求逆矩阵
+	int stRank = 6;
+	real[int] b(6);
+	for(int k=0; k<stRank; k++)
+	{
+		real w= vec(0,0);
+		int m = stRank - k -1;
+		for(int i=1; i<stRank; i++)
+		{
+			real g = vec(i,0);
+			b[i] = g / w;
+			if (i<=m)
+			{
+				b(i) = -b(i);
+			}
+			for(int j=1; j<=i; j++)
+			{
+				vec(i-1,j-1)= vec(i,j) + g * b(j);
+			}
+		}
+		vec(stRank-1,stRank-1) = 1.0 / w;
+		for(int i= 1; i<stRank; i++)
+		{
+			vec(stRank-1,i-1) =  b(i);
+		}
+	}
+	for(int i=0; i<stRank-1; i++)
+	{
+		for(int j = i+1; j<stRank; j++)
+		{
+			vec(i,j) = vec(j,i);
+		}
+	}
+
+	real[int,int] cmatrix = vec;
+	return cmatrix;
+}
+//****************************************************²非线性材料参数(end)************************************
+
+//****************************************************2.前处理(begin)*************************************
+//include "../cicpnonlinear3/MeshFile/MeshFunc2D.edp"
+//load "lapack"
+//load "fflapack"
+//单胞网格及几何形状定义
+real r=0.35;
+//1.单胞几何模型及网格生成程序段
+//球形夹杂单胞
+//mesh3 platecell=CBall(0.5, 0.5, 0.5, r, 8, 0);//这个单胞划分函数对球的划分很密集
+mesh3 CellTh= MBall(1, 1, 1, 0.5, 0.5, 0.5, r, 35);//这个单胞函数对球的划分不是很密
+int RM1 = CellTh(0.01, 0.01, 0.01).region;
+int RM2 = CellTh(0.5, 0.5, 0.5).region;
+//2.均匀化区域网格
+int n =5;                  //单胞数目5*5*5 
+real epsilon = 1./n;        //单胞大小
+int[int] NN=[25,25,25];
+real [int,int] BB=[[0,5],[0,5],[0,5]];
+int [int,int] L=[[1,2],[3,4],[5,6]];
+mesh3 HomoTh1=Cube(NN,BB,L);
+mesh3 HomoTh=movemesh3(HomoTh1,transfo=[x*epsilon,y*epsilon,z*epsilon]);
+//HomoTh = movemesh(HomoTh, [0.5*x,y]);
+//HomoTh = movemesh(HomoTh, [x+1, y]);
+//宏观精细有限元网格及几何形状定义
+//mesh MacroTh = MacroMeshRectangle(n, 20, 0.25, 0.25, 0.5, 0.5, 0);
+//1.宏观区域几何模型及网格生成程序段
+//a代表x方向的单胞数，b代表y方向的单胞数，c代表z方向的单胞数
+int an1=5;
+int bn1=5;
+int cn1=5;
+mesh3 MacroTh1 = MBall(an1, bn1, cn1, 0.5, 0.5, 0.5, r, 35);
+mesh3 MacroTh=movemesh3(MacroTh1,transfo=[x*epsilon,y*epsilon,z*epsilon]);
+int RMM1 = MacroTh(0.01, 0.01, 0.01).region;
+int RMM2 = MacroTh(0.5, 0.5, 0.5).region;
+//MacroTh = movemesh(MacroTh, [x+1, y]);
+plot(MacroTh);
+mesh3 Exter=trunc(MacroTh,region==RMM1);
+plot(Exter);
+mesh3 Inter=trunc(MacroTh,region==RMM2);
+plot(Inter);
+fespace MacroVh(MacroTh, P1);
+fespace MacroVh0(MacroTh, P0);
+//宏观区域上线性常数部分参数
+MacroVh0 rhoM= rho1*(region==RMM1) + rho2*(region==RMM2);//密度不依赖于温度
+MacroVh0 nuM = nu1*(region==RMM1) + nu2*(region==RMM2);//温度对泊松比影响很小
+MacroVh0 aaM = Ma1*(region==RMM1) + Ma2*(region==RMM2);
+MacroVh0 EaM = Ea1*(region==RMM1) + Ea2*(region==RMM2);
+MacroVh0 baM = beta1*(region==RMM1) + beta2*(region==RMM2);
+MacroVh0 daM = deta1*(region==RMM1) + deta2*(region==RMM2);
+MacroVh0 pcaM= pca1*(region==RMM1) + pca2*(region==RMM2);
+//宏观区域上线性一次项部分参数
+MacroVh0 abM = Mb1*(region==RMM1) + Mb2*(region==RMM2);
+MacroVh0 EbM = Eb1*(region==RMM1) + Eb2*(region==RMM2);
+MacroVh0 bbM = betb1*(region==RMM1) + betb2*(region==RMM2);
+MacroVh0 dbM = detb1*(region==RMM1) + detb2*(region==RMM2);
+MacroVh0 pcbM= pcb1*(region==RMM1) + pcb2*(region==RMM2);
+//宏观区域上非线性二次项部分参数
+MacroVh0 acM = Mc1*(region==RMM1) + Mc2*(region==RMM2);
+MacroVh0 EcM = Ec1*(region==RMM1) + Ec2*(region==RMM2);
+MacroVh0 bcM = betc1*(region==RMM1) + betc2*(region==RMM2);
+MacroVh0 dcM = detc1*(region==RMM1) + detc2*(region==RMM2);
+MacroVh0 pccM= pcc1*(region==RMM1) + pcc2*(region==RMM2);
+
+fespace CellVh(CellTh, P1);
+fespace CellVh0(CellTh, P0);
+//单胞上线性常数部分参数
+CellVh0 rho= rho1*(region==RM1) + rho2*(region==RM2);
+CellVh0 nu = nu1*(region==RM1) + nu2*(region==RM2);
+CellVh0 aa = Ma1*(region==RM1) + Ma2*(region==RM2);
+//CellVh0 lambda = lambda1*(region==RM1) + lambda2*(region==RM2);
+//CellVh0 mua = mua1*(region==RM1) + mua2*(region==RM2);
+//CellVh0 Ea = Ea1*(region==RM1) + Ea2*(region==RM2);
+CellVh0 ba = beta1*(region==RM1) + beta2*(region==RM2);
+CellVh0 pca= pca1*(region==RM1) + pca2*(region==RM2);
+CellVh0 da = deta1*(region==RM1) + deta2*(region==RM2);//热传导方程中的双向耦合模量
+//单胞上线性一次项部分参数
+CellVh0 ab = Mb1*(region==RM1) + Mb2*(region==RM2);
+//CellVh0 lambdb= lambdb1*(region==RM1) + lambdb2*(region==RM2);
+//CellVh0 mub = mub1*(region==RM1) + mub2*(region==RM2);
+//CellVh0 Eb = Eb1*(region==RM1) + Eb2*(region==RM2);
+CellVh0 bb = betb1*(region==RM1) + betb2*(region==RM2);
+CellVh0 pcb= pcb1*(region==RM1) + pcb2*(region==RM2);
+CellVh0 db = detb1*(region==RM1) + detb2*(region==RM2);//热传导方程中的双向耦合模量
+//单胞上非线性二次项部分参数
+CellVh0 ac = Mc1*(region==RM1) + Mc2*(region==RM2);
+//CellVh0 lambdc= lambdc1*(region==RM1) + lambdc2*(region==RM2);
+//CellVh0 muc = muc1*(region==RM1) + muc2*(region==RM2);
+//CellVh0 Ec = Ec1*(region==RM1) + Ec2*(region==RM2);
+CellVh0 bc = betc1*(region==RM1) + betc2*(region==RM2);
+CellVh0 pcc= pcc1*(region==RM1) + pcc2*(region==RM2);
+CellVh0 dc = detc1*(region==RM1) + detc2*(region==RM2);//热传导方程中的双向耦合模量
+real E1=material(Ea1,Eb1,Ec1,intiT);
+real E2=material(Ea2,Eb2,Ec2,intiT);
+real[int,int] MMa1=HH(E1,nu1);
+MMa1=inverse(MMa1);
+cout << "1.Based material Constitute Matrix M1: " << endl;
+cout << MMa1 << endl;
+real[int,int] MMa2=HH(E2,nu2);
+MMa2=inverse(MMa2);
+cout << "2.Reinforced material Constitute Matrix M2: " << endl;
+cout << MMa2 << endl;
+//单胞函数刚度系数定义
+func k11 = MMa1(0,0)*(region==RM1) + MMa2(0,0)*(region==RM2);
+func k12 = MMa1(0,1)*(region==RM1) + MMa2(0,1)*(region==RM2);
+func k13 = MMa1(0,2)*(region==RM1) + MMa2(0,2)*(region==RM2);
+func k21 = MMa1(1,0)*(region==RM1) + MMa2(1,0)*(region==RM2);
+func k22 = MMa1(1,1)*(region==RM1) + MMa2(1,1)*(region==RM2);
+func k23 = MMa1(1,2)*(region==RM1) + MMa2(1,2)*(region==RM2);
+func k31 = MMa1(2,0)*(region==RM1) + MMa2(2,0)*(region==RM2);
+func k32 = MMa1(2,1)*(region==RM1) + MMa2(2,1)*(region==RM2);
+func k33 = MMa1(2,2)*(region==RM1) + MMa2(2,2)*(region==RM2);
+func k44 = MMa1(3,3)*(region==RM1) + MMa2(3,3)*(region==RM2);
+func k55 = MMa1(4,4)*(region==RM1) + MMa2(4,4)*(region==RM2);
+func k66 = MMa1(5,5)*(region==RM1) + MMa2(5,5)*(region==RM2);
+
+
+real dE1=material(Eb1,2*Ec1,0,intiT);
+real dE2=material(Eb2,2*Ec2,0,intiT);
+real[int,int] dMMa1=HH(dE1,nu1);
+dMMa1=inverse(dMMa1);
+cout << "1.Based material Constitute Matrix M1: " << endl;
+cout << dMMa1 << endl;
+real[int,int] dMMa2=HH(dE2,nu2);
+dMMa2=inverse(dMMa2);
+cout << "2.Reinforced material Constitute Matrix M2: " << endl;
+cout << dMMa2 << endl;
+func dk11 = dMMa1(0,0)*(region==RM1) + dMMa2(0,0)*(region==RM2);
+func dk12 = dMMa1(0,1)*(region==RM1) + dMMa2(0,1)*(region==RM2);
+func dk13 = dMMa1(0,2)*(region==RM1) + dMMa2(0,2)*(region==RM2);
+func dk21 = dMMa1(1,0)*(region==RM1) + dMMa2(1,0)*(region==RM2);
+func dk22 = dMMa1(1,1)*(region==RM1) + dMMa2(1,1)*(region==RM2);
+func dk23 = dMMa1(1,2)*(region==RM1) + dMMa2(1,2)*(region==RM2);
+func dk31 = dMMa1(2,0)*(region==RM1) + dMMa2(2,0)*(region==RM2);
+func dk32 = dMMa1(2,1)*(region==RM1) + dMMa2(2,1)*(region==RM2);
+func dk33 = dMMa1(2,2)*(region==RM1) + dMMa2(2,2)*(region==RM2);
+func dk44 = dMMa1(3,3)*(region==RM1) + dMMa2(3,3)*(region==RM2);
+func dk55 = dMMa1(4,4)*(region==RM1) + dMMa2(4,4)*(region==RM2);
+func dk66 = dMMa1(5,5)*(region==RM1) + dMMa2(5,5)*(region==RM2);
+//宏观问题刚度系数定义
+MacroVh kM11;
+MacroVh kM12;
+MacroVh kM13;
+MacroVh kM21;
+MacroVh kM22;
+MacroVh kM23;
+MacroVh kM31;
+MacroVh kM32;
+MacroVh kM33;
+MacroVh kM44;
+MacroVh kM55;
+MacroVh kM66;
+
+//方程未知函数
+//func f=15000;//热源函数
+func f=5000;//热源函数
+func f1=0.0;//x方向体力
+func f2=0.0;//y方向体力
+func f3=-10000;//z方向体力
+real dt = 0.01; //时间步长
+
+real Time=1.0;
+//****************************************************前处理(end)*************************************
+
+//*********************************3.精细有限元求解定义(begin)*******************************
+//Newmark差分格式中的常数gamma、beta
+real gamma=0.6;
+real beta=0.35;
+real c0=1.0/(beta*dt^2.0);
+real c1=gamma/(beta*dt);
+real c2=1.0/(beta*dt);
+real c3=1.0/(2.0*beta)-1.0;
+real c4=gamma/beta-1.0;
+real c5=dt*(gamma/(2.0*beta)-1.0);
+real c6=dt*(1-gamma);
+real c7=gamma*dt;
+real RHT; //定义单胞函数中的宏观变量均匀化温度T0
+//插值求解所有一阶单胞函数部分二阶单胞函数
+MacroVh Tx = x;//宏观x坐标
+MacroVh Ty = y;//宏观y坐标
+MacroVh Tz = z;//宏观y坐标
+//对第0层的加速度解进行计算
+MacroVh FEU,FEV,FEW,FET;           //实变量
+MacroVh v1,v2,v3,vT;              //虚变量
+MacroVh Tp,Tpp,up1,upp1,up2,upp2,up3,upp3;  //时间方向递推时的中间变量
+MacroVh IFEU,IFEV,IFEW,IFET;        //非线性迭代时的中间变量
+//热传导方程初值问题
+Tpp=373.15;
+Tp=373.15;
+//IFET=373.15;
+//波动方程初值问题,表示初始位移、速度均为0
+upp1=0.0;
+up1=0.0;
+upp2=0.0;
+up2=0.0;
+upp3=0.0;
+up3=0.0;
+
+//**********************************精细有限元求解定义(end)*******************************
+//(C(EaM, nuM)-C(EbM, nuM)*IFET)
+
+//*********************************4.一阶二阶单胞函数均匀化系数定义(begin)*******************************
+//1.热学问题微观单胞问题
+CellVh N1, v;
+    problem CellN1(N1, v, solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N1)*dx(v)+dy(N1)*dy(v)+dz(N1)*dz(v)))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx(v))
+       +on(1,2,3,4,5,6, N1=0);
+    //plot(N1, wait=1, value=1, fill=1);
+CellVh N2;
+    problem CellN2(N2, v, solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N2)*dx(v)+dy(N2)*dy(v)+dz(N2)*dz(v)))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dy(v))
+    +on(1,2,3,4,5,6, N2=0);
+    //plot(N2, wait=1, value=1, fill=1);
+CellVh N3;
+    problem CellN3(N3, v, solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N3)*dx(v)+dy(N3)*dy(v)+dz(N3)*dz(v)))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dz(v))
+    +on(1,2,3,4,5,6, N3=0);
+    //plot(N2, wait=1, value=1, fill=1);	
+//2.力学问题微观单胞问题
+CellVh u11, v11, w11, uu, vv, ww;
+    problem CellPro11([u11, v11, w11], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u11, v11, w11)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66))                      
+       +on(1, 2, 3, 4, 5, 6, u11=0, v11=0, w11=0);
+    //plot(u11, cmm="u11", fill=true, value=true, wait=true); 
+    //plot(v11, cmm="v11", fill=true, value=true, wait=true);
+	
+CellVh u12, v12, w12;
+    problem CellPro12([u12, v12, w12], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u12, v12, w12)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66))                      
+       +on(1, 2, 3, 4, 5, 6, u12=0, v12=0, w12=0); 
+    //plot(u12, cmm="u12", fill=true, value=true, wait=true); 
+    //plot(v12, cmm="v12", fill=true, value=true, wait=true);
+
+CellVh u22, v22, w22;
+    problem CellPro22([u22, v22, w22], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u22, v22, w22)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66))                      
+       +on(1, 2, 3, 4, 5, 6, u22=0, v22=0, w22=0); 
+    //plot(u22, cmm="u22", fill=true, value=true, wait=true); 
+    //plot(v22, cmm="v22", fill=true, value=true, wait=true);
+	
+CellVh u33, v33, w33;
+    problem CellPro33([u33, v33, w33], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u33, v33, w33)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66))                      
+       +on(1, 2, 3, 4, 5, 6, u33=0, v33=0, w33=0); 
+    //plot(u33, cmm="u33", fill=true, value=true, wait=true); 
+    //plot(v33, cmm="v33", fill=true, value=true, wait=true);
+	
+CellVh u23, v23, w23;
+    problem CellPro23([u23, v23, w23], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u23, v23, w23)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66))                      
+       +on(1, 2, 3, 4, 5, 6, u23=0, v23=0, w23=0); 
+    //plot(u23, cmm="u23", fill=true, value=true, wait=true); 
+    //plot(v23, cmm="v23", fill=true, value=true, wait=true);
+	
+CellVh u31, v31, w31;
+    problem CellPro31([u31, v31, w31], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u31, v31, w31)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66))                      
+       +on(1, 2, 3, 4, 5, 6, u31=0, v31=0, w31=0); 
+    //plot(u31, cmm="u31", fill=true, value=true, wait=true); 
+    //plot(v31, cmm="v31", fill=true, value=true, wait=true);	
+	
+//3.热力耦合问题微观单胞问题
+CellVh ub, vb, wb;
+    problem CellBeta([ub, vb, wb], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(ub, vb, wb)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)((material(ba,bb,bc,RHT))*(dx(uu)+dy(vv)+dz(ww)))                      
+    +on(1, 2, 3, 4, 5, 6, ub=0, vb=0, wb=0);
+//**********************************************һ½׵¥°ûÎÊÌâ(end)************************************************
+fespace HomoVh(HomoTh, P1);
+HomoVh U0,V0,W0,T0;   //实变量
+HomoVh Hv1,Hv2,Hv3,HvT;  //虚变量
+HomoVh HTp,HTpp,Hup1,Hupp1,Hup2,Hupp2,Hup3,Hupp3;  //时间方向递推时的中间变量
+//热传导方程初值问题
+HTpp=373.15;
+HTp=373.15;
+//波动方程初值问题,表示初始位移、速度均为0
+Hupp1=0.0;
+Hup1=0.0;
+Hupp2=0.0;
+Hup2=0.0;
+Hupp3=0.0;
+Hup3=0.0;
+//求解均匀化系数
+HomoVh homoA11, homoA12, homoA22, homoA33; 
+HomoVh homoC1111, homoC1122, homoC1133; 
+HomoVh homoC2211, homoC2222, homoC2233;
+HomoVh homoC3311, homoC3322, homoC3333;//刚度系数
+HomoVh homoC1212, homoC2323, homoC3131;//利用刚度矩阵对称性减少计算量
+HomoVh homobeta11, homobeta12, homobeta22, homobeta33; 
+HomoVh homodeta11, homodeta12, homodeta22, homodeta33; //均匀化热传导方程双向耦合模量
+HomoVh homoS;
+real homorho = int3d(CellTh)(rho);
+	
+//计算该自由度上的均匀化系数的值
+//均匀化弹性系数
+real IhomoC1111, IhomoC1122, IhomoC1133; 
+real IhomoC2211, IhomoC2222, IhomoC2233;
+real IhomoC3311, IhomoC3322, IhomoC3333;//刚度系数
+real IhomoC1212, IhomoC2323, IhomoC3131;//利用刚度矩阵对称性减少计算量
+real Ihomobeta11, Ihomobeta22, Ihomobeta33; 
+real Ihomorho;
+{
+    RHT=intiT;
+    //基体和夹杂刚度参数计算
+    E1=material(Ea1,Eb1,Ec1,RHT);
+    E2=material(Ea2,Eb2,Ec2,RHT);
+    MMa1=HH(E1,nu1);
+    MMa1=inverse(MMa1);
+    MMa2=HH(E2,nu2);
+    MMa2=inverse(MMa2);
+    //单胞函数刚度系数定义
+    func k11 = MMa1(0,0)*(region==RM1) + MMa2(0,0)*(region==RM2);
+    func k12 = MMa1(0,1)*(region==RM1) + MMa2(0,1)*(region==RM2);
+    func k13 = MMa1(0,2)*(region==RM1) + MMa2(0,2)*(region==RM2);
+    func k21 = MMa1(1,0)*(region==RM1) + MMa2(1,0)*(region==RM2);
+    func k22 = MMa1(1,1)*(region==RM1) + MMa2(1,1)*(region==RM2);
+    func k23 = MMa1(1,2)*(region==RM1) + MMa2(1,2)*(region==RM2);
+    func k31 = MMa1(2,0)*(region==RM1) + MMa2(2,0)*(region==RM2);
+    func k32 = MMa1(2,1)*(region==RM1) + MMa2(2,1)*(region==RM2);
+    func k33 = MMa1(2,2)*(region==RM1) + MMa2(2,2)*(region==RM2);
+    func k44 = MMa1(3,3)*(region==RM1) + MMa2(3,3)*(region==RM2);
+    func k55 = MMa1(4,4)*(region==RM1) + MMa2(4,4)*(region==RM2);
+    func k66 = MMa1(5,5)*(region==RM1) + MMa2(5,5)*(region==RM2);
+    //一阶单胞函数求解
+    CellPro11;
+    CellPro12;
+    CellPro22;
+    CellPro33;
+    CellPro23;
+    CellPro31;
+    CellBeta;	
+	IhomoC1111=int3d(CellTh)(k11+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+    IhomoC1122=int3d(CellTh)(k12+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));
+    IhomoC1133=int3d(CellTh)(k13+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));	
+    IhomoC2211=int3d(CellTh)(k21+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+    IhomoC2222=int3d(CellTh)(k22+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));	  
+    IhomoC2233=int3d(CellTh)(k23+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));		
+    IhomoC3311=int3d(CellTh)(k31+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+    IhomoC3322=int3d(CellTh)(k32+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));	  
+    IhomoC3333=int3d(CellTh)(k33+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));		
+    IhomoC1212=int3d(CellTh)(k44+C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u12, v12, w12));
+    IhomoC2323=int3d(CellTh)(k55+C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u23, v23, w23));
+    IhomoC3131=int3d(CellTh)(k66+C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u31, v31, w31));
+    //均匀化热弹性系数
+    Ihomobeta11=int3d(CellTh)(material(ba,bb,bc,RHT)+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+    Ihomobeta22=int3d(CellTh)(material(ba,bb,bc,RHT)+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+    Ihomobeta33=int3d(CellTh)(material(ba,bb,bc,RHT)+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb));
+	Ihomorho = int3d(CellTh)(rho);
+}
+/* for(int i = 0; i < HomoVh.ndof; i++)//均匀化网格上的一阶单胞函数均匀化系数求解
+{
+    RHT=intiT;
+    //基体和夹杂刚度参数计算
+    E1=material(Ea1,Eb1,Ec1,RHT);
+    E2=material(Ea2,Eb2,Ec2,RHT);
+    MMa1=HH(E1,nu1);
+    MMa1=inverse(MMa1);
+    MMa2=HH(E2,nu2);
+    MMa2=inverse(MMa2);
+    //单胞函数刚度系数定义
+    func k11 = MMa1(0,0)*(region==RM1) + MMa2(0,0)*(region==RM2);
+    func k12 = MMa1(0,1)*(region==RM1) + MMa2(0,1)*(region==RM2);
+    func k13 = MMa1(0,2)*(region==RM1) + MMa2(0,2)*(region==RM2);
+    func k21 = MMa1(1,0)*(region==RM1) + MMa2(1,0)*(region==RM2);
+    func k22 = MMa1(1,1)*(region==RM1) + MMa2(1,1)*(region==RM2);
+    func k23 = MMa1(1,2)*(region==RM1) + MMa2(1,2)*(region==RM2);
+    func k31 = MMa1(2,0)*(region==RM1) + MMa2(2,0)*(region==RM2);
+    func k32 = MMa1(2,1)*(region==RM1) + MMa2(2,1)*(region==RM2);
+    func k33 = MMa1(2,2)*(region==RM1) + MMa2(2,2)*(region==RM2);
+    func k44 = MMa1(3,3)*(region==RM1) + MMa2(3,3)*(region==RM2);
+    func k55 = MMa1(4,4)*(region==RM1) + MMa2(4,4)*(region==RM2);
+    func k66 = MMa1(5,5)*(region==RM1) + MMa2(5,5)*(region==RM2);
+    //一阶单胞函数求解
+    CellPro11;
+    CellPro12;
+    CellPro22;
+    CellPro33;
+    CellPro23;
+    CellPro31;
+    CellBeta;	
+	homoC1111[][i]=int3d(CellTh)(k11+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+    homoC1122[][i]=int3d(CellTh)(k12+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));
+    homoC1133[][i]=int3d(CellTh)(k13+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));	
+    homoC2211[][i]=int3d(CellTh)(k21+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+    homoC2222[][i]=int3d(CellTh)(k22+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));	  
+    homoC2233[][i]=int3d(CellTh)(k23+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));		
+    homoC3311[][i]=int3d(CellTh)(k31+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+    homoC3322[][i]=int3d(CellTh)(k32+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));	  
+    homoC3333[][i]=int3d(CellTh)(k33+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));		
+    homoC1212[][i]=int3d(CellTh)(k44+C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u12, v12, w12));
+    homoC2323[][i]=int3d(CellTh)(k55+C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u23, v23, w23));
+    homoC3131[][i]=int3d(CellTh)(k66+C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u31, v31, w31));
+    //均匀化热弹性系数
+    homobeta11[][i]=int3d(CellTh)(material(ba,bb,bc,RHT)+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+    homobeta22[][i]=int3d(CellTh)(material(ba,bb,bc,RHT)+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+    homobeta33[][i]=int3d(CellTh)(material(ba,bb,bc,RHT)+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb));
+} */
+//对第0层的加速度解进行计算
+HomoVh HU0,HV0,HW0;
+/* solve PrepMechHomo([HU0,HV0,HW0],[Hv1,Hv2,Hv3],solver=GMRES,eps=1.0e-10)=
+         int3d(HomoTh)(homorho*HU0*Hv1)
+	    +int3d(HomoTh)(homorho*HV0*Hv2)
+		+int3d(HomoTh)(homorho*HW0*Hv3)
+		+int3d(HomoTh)(strain(Hup1,Hup2,Hup3)'*C(homoC1111,homoC1122,homoC1133,homoC2211,homoC2222,homoC2233,homoC3311,homoC3322,homoC3333,homoC1212,homoC2323,homoC3131)*strain(Hv1,Hv2,Hv3))
+        -int3d(HomoTh)((homobeta11*dx(Hv1)+homobeta22*dy(Hv2)+homobeta33*dz(Hv3))*HTp)
+		+int3d(HomoTh)((homobeta11*dx(Hv1)+homobeta22*dy(Hv2)+homobeta33*dz(Hv3))*intiT)
+        -int3d(HomoTh)(f1*Hv1)
+        -int3d(HomoTh)(f2*Hv2)
+		-int3d(HomoTh)(f3*Hv3)
+		+on(1,2,3,4,HU0=0.0,HV0=0.0,HW0=0.0); */
+		
+solve PrepMechHomo([HU0,HV0,HW0],[Hv1,Hv2,Hv3],solver=GMRES,eps=1.0e-10)=
+         int3d(HomoTh)(Ihomorho*HU0*Hv1)
+	    +int3d(HomoTh)(Ihomorho*HV0*Hv2)
+		+int3d(HomoTh)(Ihomorho*HW0*Hv3)
+		+int3d(HomoTh)(strain(Hup1,Hup2,Hup3)'*C(IhomoC1111,IhomoC1122,IhomoC1133,IhomoC2211,IhomoC2222,IhomoC2233,IhomoC3311,IhomoC3322,IhomoC3333,IhomoC1212,IhomoC2323,IhomoC3131)*strain(Hv1,Hv2,Hv3))
+        -int3d(HomoTh)((Ihomobeta11*dx(Hv1)+Ihomobeta22*dy(Hv2)+Ihomobeta33*dz(Hv3))*HTp)
+		+int3d(HomoTh)((Ihomobeta11*dx(Hv1)+Ihomobeta22*dy(Hv2)+Ihomobeta33*dz(Hv3))*intiT)
+        -int3d(HomoTh)(f1*Hv1)
+        -int3d(HomoTh)(f2*Hv2)
+		-int3d(HomoTh)(f3*Hv3)
+		+on(1,2,3,4,HU0=0.0,HV0=0.0,HW0=0.0);
+		
+//采用解耦的方法求解耦合系统
+HomoVh Hufu1,Hvfu1,Hwfu1;
+Hufu1=0;
+Hvfu1=0;
+Hwfu1=0;//利用初始条件对第-1层的位移解进行预估,为了求解第1层的温度解
+HomoVh Hum1,Hvm1,Hwm1;
+HomoVh dHum1,dHvm1,dHwm1;
+HomoVh ddHum1,ddHvm1,ddHwm1;//Newmark差分格式中用到的上一层的位移解、速度解、加速度解
+HomoVh middHum1,middHvm1,middHwm1;	
+Hum1=Hup1;
+Hvm1=Hup2;
+Hwm1=Hup3;//第0层位移初始条件
+dHum1=0;
+dHvm1=0;
+dHwm1=0;//第0层位移初始条件		
+ddHum1=HU0;
+ddHvm1=HV0;
+ddHwm1=HW0;//第0层位移加速度
+Hup1=Hufu1;
+Hup2=Hvfu1;
+Hup3=Hwfu1;
+
+problem DecoupThermohomo(T0,HvT,solver=GMRES,eps=1.0e-10)=
+         int3d(HomoTh)(homoS*T0*HvT/dt)-int3d(HomoTh)(homoS*HTp*HvT/dt)		
+		+int3d(HomoTh)(homoA11*dx(T0)*dx(HvT)+homoA22*dy(T0)*dy(HvT)+homoA33*dz(T0)*dz(HvT))		
+		+int3d(HomoTh)(0.5*homodeta11*dx(Hup1)*HvT/dt+0.5*homodeta22*dy(Hup2)*HvT/dt+0.5*homodeta33*dz(Hup3)*HvT/dt)
+		-int3d(HomoTh)(0.5*homodeta11*dx(Hupp1)*HvT/dt+0.5*homodeta22*dy(Hupp2)*HvT/dt+0.5*homodeta33*dz(Hupp3)*HvT/dt)		
+		-int3d(HomoTh)(f*HvT)
+		+on(5,T0=373.15)
+		+on(6,T0=773.15);
+
+problem DecoupMechanhomo([U0,V0,W0],[Hv1,Hv2,Hv3],solver=GMRES,eps=1.0e-10)=
+         int3d(HomoTh)(homorho*U0*Hv1*c0)
+		+int3d(HomoTh)(homorho*V0*Hv2*c0)
+		+int3d(HomoTh)(homorho*W0*Hv3*c0)
+		+int3d(HomoTh)(strain(U0,V0,W0)'*[[homoC1111, homoC1122, homoC1133, 0, 0, 0], 
+                                          [homoC2211, homoC2222, homoC2233, 0, 0, 0],
+                                      	  [homoC3311, homoC3322, homoC3333, 0, 0, 0],							  
+                                          [0, 0, 0, homoC1212, 0, 0],
+									      [0, 0, 0, 0, homoC2323, 0],
+									      [0, 0, 0, 0, 0, homoC3131]]*strain(Hv1,Hv2,Hv3))									   
+		-int3d(HomoTh)(homobeta11*dx(Hv1)*T0+homobeta22*dy(Hv2)*T0+homobeta33*dz(Hv3)*T0)
+        +int3d(HomoTh)(homobeta11*dx(Hv1)*intiT+homobeta22*dy(Hv2)*intiT+homobeta33*dz(Hv3)*intiT)
+		-int3d(HomoTh)(homorho*Hum1*Hv1*c0)
+	    -int3d(HomoTh)(homorho*Hvm1*Hv2*c0)
+		-int3d(HomoTh)(homorho*Hwm1*Hv3*c0)
+		-int3d(HomoTh)(homorho*dHum1*Hv1*c2)
+	    -int3d(HomoTh)(homorho*dHvm1*Hv2*c2)
+		-int3d(HomoTh)(homorho*dHwm1*Hv3*c2)
+		-int3d(HomoTh)(homorho*ddHum1*Hv1*c3)
+	    -int3d(HomoTh)(homorho*ddHvm1*Hv2*c3)
+		-int3d(HomoTh)(homorho*ddHwm1*Hv3*c3)		
+		-int3d(HomoTh)(f1*Hv1+f2*Hv2+f3*Hv3)
+        +on(1,2,3,4, U0=0, V0=0, W0=0);
+//********************************二阶单胞函数定义********************************
+//*******************************力学问题二阶单胞函数************************************
+//1.依赖温度发生变化
+//2.非线性拟周期函数
+//delta = 10;
+real valHomoC1111, valHomoC1122, valHomoC1133; 
+real valHomoC2211, valHomoC2222, valHomoC2233;//均匀化系数在固定宏观点的值,这是拟周期单胞函数具有的性质
+real valHomoC3311, valHomoC3322, valHomoC3333;
+real valHomoC1212, valHomoC2323, valHomoC3131;
+//a.以1开头的六个二阶单胞函数
+CellVh u111, v111, w111;
+    problem CellPro111([u111, v111, w111], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u111, v111, w111)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k11-valHomoC1111)*uu)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u11)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v11)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w11)
+       +on(1, 2, 3, 4, 5, 6, u111=0, v111=0, w111=0);
+    //plot(u111, cmm="u111", fill=true, value=true, wait=true);
+    //plot(v111, cmm="v111", fill=true, value=true, wait=true);
+// Th = movemesh(CellTh, [x + delta*u111, y + delta*v111]);
+// plot(Th, cmm="[u111, v111]", wait=1, value=1);
+
+CellVh u112, v112, w112;
+    problem CellPro112([u112, v112, w112], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u112, v112, w112)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k44-valHomoC1212)*vv)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u12)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v12)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w12)
+       +on(1, 2, 3, 4, 5, 6, u112=0, v112=0, w112=0);
+    //plot(u112, cmm="u112", fill=true, value=true, wait=true);
+    //plot(v112, cmm="v112", fill=true, value=true, wait=true);
+
+// Th = movemesh(CellTh, [x + delta*u112, y + delta*v112]);
+// plot(Th, cmm="[u112, v112]", wait=1, value=1);
+
+CellVh u122, v122, w122;
+    problem CellPro122([u122, v122, w122], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u122, v122, w122)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k12-valHomoC1122)*uu)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u22)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v22)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w22)
+       +on(1, 2, 3, 4, 5, 6, u122=0, v122=0, w122=0);
+    //plot(u122, cmm="u122", fill=true, value=true, wait=true);
+    //plot(v122, cmm="v122", fill=true, value=true, wait=true);
+	
+CellVh u133, v133, w133;
+    problem CellPro133([u133, v133, w133], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u133, v133, w133)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k13-valHomoC1133)*uu)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u33)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v33)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w33)
+       +on(1, 2, 3, 4, 5, 6, u133=0, v133=0, w133=0);
+
+CellVh u123, v123, w123;
+    problem CellPro123([u123, v123, w123], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u123, v123, w123)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)(strain(u23, v23, w23)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u23)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v23)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w23)
+       +on(1, 2, 3, 4, 5, 6, u123=0, v123=0, w123=0);
+
+CellVh u131, v131, w131;
+    problem CellPro131([u131, v131, w131], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u131, v131, w131)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k66-valHomoC3131)*ww)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u31)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v31)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w31)
+       +on(1, 2, 3, 4, 5, 6, u131=0, v131=0, w131=0);
+
+//b.以2开头的六个二阶单胞函数
+CellVh u211, v211, w211;
+    problem CellPro211([u211, v211, w211], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u211, v211, w211)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k21-valHomoC1122)*vv)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u11)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v11)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w11)
+       +on(1, 2, 3, 4, 5, 6, u211=0, v211=0, w211=0);
+    //plot(u211, cmm="u211", fill=true, value=true, wait=true);
+    //plot(v211, cmm="v211", fill=true, value=true, wait=true);
+
+CellVh u212, v212, w212;
+problem CellPro212([u212, v212, w212], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u212, v212, w212)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k44-valHomoC1212)*uu)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u12)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v12)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w12)
+       +on(1, 2, 3, 4, 5, 6, u212=0, v212=0, w212=0);
+    //plot(u212, cmm="u212", fill=true, value=true, wait=true);
+    //plot(v212, cmm="v212", fill=true, value=true, wait=true);
+
+// Th = movemesh(CellTh, [x + delta*u212, y + delta*v212]);
+// plot(Th, cmm="[u212, v212]",wait=1, value=1);
+
+CellVh u222, v222, w222;
+    problem CellPro222([u222, v222, w222], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u222, v222, w222)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k22-valHomoC2222)*vv)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u22)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v22)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w22)
+       +on(1, 2, 3, 4, 5, 6, u222=0, v222=0, w222=0);
+    //plot(u222, cmm="u222", fill=true, value=true, wait=true);
+    //plot(v222, cmm="v222", fill=true, value=true, wait=true);
+	
+CellVh u233, v233, w233;
+    problem CellPro233([u233, v233, w233], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u233, v233, w233)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k23-valHomoC2233)*vv)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u33)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v33)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w33)
+       +on(1, 2, 3, 4, 5, 6, u233=0, v233=0, w233=0);
+
+CellVh u223, v223, w223;
+problem CellPro223([u223, v223, w223], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u223, v223, w223)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k55-valHomoC2323)*ww)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u23)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v23)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w23)
+       +on(1, 2, 3, 4, 5, 6, u223=0, v223=0, w223=0);
+
+CellVh u231, v231, w231;
+    problem CellPro231([u231, v231, w231], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u231, v231, w231)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)(strain(u31, v31, w31)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u31)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v31)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w31)
+       +on(1, 2, 3, 4, 5, 6, u231=0, v231=0, w231=0);
+	
+//c.以3开头的六个二阶单胞函数	
+CellVh u311, v311, w311;
+    problem CellPro311([u311, v311, w311], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u311, v311, w311)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k31-valHomoC3311)*vv)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u11, v11, w11)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u11)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v11)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w11)
+       +on(1, 2, 3, 4, 5, 6, u311=0, v311=0, w311=0);
+    //plot(u211, cmm="u211", fill=true, value=true, wait=true);
+    //plot(v211, cmm="v211", fill=true, value=true, wait=true);
+
+CellVh u312, v312, w312;
+problem CellPro312([u312, v312, w312], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u312, v312, w312)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)(strain(u12, v12, w12)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u12, v12, w12)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u12)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v12)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w12)
+       +on(1, 2, 3, 4, 5, 6, u312=0, v312=0, w312=0);
+    //plot(u212, cmm="u212", fill=true, value=true, wait=true);
+    //plot(v212, cmm="v212", fill=true, value=true, wait=true);
+
+// Th = movemesh(CellTh, [x + delta*u212, y + delta*v212]);
+// plot(Th, cmm="[u212, v212]",wait=1, value=1);
+
+CellVh u322, v322, w322;
+    problem CellPro322([u322, v322, w322], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u322, v322, w322)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k32-valHomoC3322)*vv)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u22, v22, w22)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u22)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v22)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w22)
+       +on(1, 2, 3, 4, 5, 6, u322=0, v322=0, w322=0);
+    //plot(u222, cmm="u222", fill=true, value=true, wait=true);
+    //plot(v222, cmm="v222", fill=true, value=true, wait=true);
+	
+CellVh u333, v333, w333;
+    problem CellPro333([u333, v333, w333], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u333, v333, w333)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k33-valHomoC3333)*vv)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u33, v33, w33)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u33)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v33)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w33)
+       +on(1, 2, 3, 4, 5, 6, u333=0, v333=0, w333=0);
+
+CellVh u323, v323, w323;
+problem CellPro323([u323, v323, w323], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u323, v323, w323)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       -int3d(CellTh)((k55-valHomoC2323)*ww)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u23, v23, w23)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u23)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v23)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w23)
+       +on(1, 2, 3, 4, 5, 6, u323=0, v323=0, w323=0);
+
+CellVh u331, v331, w331;
+    problem CellPro331([u331, v331, w331], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(u331, v331, w331)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))		
+       -int3d(CellTh)((k66-valHomoC3131)*uu)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       -int3d(CellTh)(strain(u31, v31, w31)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*u31)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*v31)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*w31)
+       +on(1, 2, 3, 4, 5, 6, u331=0, v331=0, w331=0);	
+	
+//2015.10.30日程序写到此处！！！！！！！！！！！
+//3.热学问题二阶微观单胞问题
+real valHomobeta11, valHomobeta22, valHomobeta33;
+CellVh ub1, vb1, wb1;
+     problem CellBeta21([ub1, vb1, wb1], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(ub1, vb1, wb1)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(((material(ba,bb,bc,RHT))-valHomobeta11)*uu)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ub)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vb)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*wb)
+       -int3d(CellTh)((material(ba,bb,bc,RHT))*(dx(uu)+dy(vv)+dz(ww))*N1)
+    +on(1, 2, 3, 4, 5, 6, ub1=0, vb1=0, wb1=0);
+//   plot(ub1, cmm="ub1", fill=true, value=true, wait=true);
+//   plot(vb1, cmm="vb1", fill=true, value=true, wait=true);
+CellVh ub2, vb2, wb2;
+	problem CellBeta22([ub2, vb2, wb2], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(ub2, vb2, wb2)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(((material(ba,bb,bc,RHT))-valHomobeta22)*vv)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ub)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vb)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*wb)
+       -int3d(CellTh)((material(ba,bb,bc,RHT))*(dx(uu)+dy(vv)+dz(ww))*N2)
+    +on(1, 2, 3, 4, 5, 6, ub2=0, vb2=0, wb2=0);
+//    plot(ub2, cmm="ub2", fill=true, value=true, wait=true);
+//    plot(vb2, cmm="vb2", fill=true, value=true, wait=true);
+CellVh ub3, vb3, wb3;
+	problem CellBeta23([ub3, vb3, wb3], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(ub3, vb3, wb3)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(((material(ba,bb,bc,RHT))-valHomobeta33)*ww)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*uu)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vv)
+       +int3d(CellTh)(strain(ub, vb, wb)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ww)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*ub)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*vb)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*wb)
+       -int3d(CellTh)((material(ba,bb,bc,RHT))*(dx(uu)+dy(vv)+dz(ww))*N3)
+    +on(1, 2, 3, 4, 5, 6, ub3=0, vb3=0, wb3=0);
+//    plot(ub3, cmm="ub3", fill=true, value=true, wait=true);
+//    plot(vb3, cmm="vb3", fill=true, value=true, wait=true);
+//添加的力学问题二阶单胞函数
+/* CellVh ZU11, ZV11;
+	problem CellZUV11([ZU11, ZV11], [uu, vv])=
+        int2d(CellTh)(strain(ZU11, ZV11)'*C(Ea,Eb,Ec,nu,RHT)*strain(uu, vv))
+       +int2d(CellTh)(valHomoC1111*uu-(material(Ea,Eb,Ec,RHT))/(1-nu^2)*uu-strain(u11, v11)'*Con11(Ea,Eb,Ec,nu,RHT)*uu)
+	   -int2d(CellTh)(strain(u11, v11)'*Con12(Ea,Eb,Ec,nu,RHT)*vv)
+       +on(1, 2, 3, 4, ZU11=0, ZV11=0);
+	   
+CellVh ZU12, ZV12;
+	problem CellZUV12([ZU12, ZV12], [uu, vv])=
+        int2d(CellTh)(strain(ZU12, ZV12)'*C(Ea,Eb,Ec,nu,RHT)*strain(uu, vv))
+	   -int2d(CellTh)(strain(u12, v12)'*Con11(Ea,Eb,Ec,nu,RHT)*uu)
+       +int2d(CellTh)(valHomoC1212*vv-(material(Ea,Eb,Ec,RHT))/(2*(1+nu))*vv-strain(u12, v12)'*Con12(Ea,Eb,Ec,nu,RHT)*vv)
+       +on(1, 2, 3, 4, ZU12=0, ZV12=0);  
+	   
+CellVh ZU22, ZV22;
+	problem CellZUV22([ZU22, ZV22], [uu, vv])=
+        int2d(CellTh)(strain(ZU22, ZV22)'*C(Ea,Eb,Ec,nu,RHT)*strain(uu, vv))
+       +int2d(CellTh)(valHomoC1122*uu-(material(Ea,Eb,Ec,RHT))*nu/(1-nu^2)*uu-strain(u22, v22)'*Con11(Ea,Eb,Ec,nu,RHT)*uu)
+	   -int2d(CellTh)(strain(u22, v22)'*Con12(Ea,Eb,Ec,nu,RHT)*vv)
+       +on(1, 2, 3, 4, ZU22=0, ZV22=0); */
+//力学问题的二阶单胞函数分解为两部分(非线性材料参数导致添加的二阶单胞函数)
+//------------------------------------
+real dx1ValHomoC1111, dx2ValHomoC2211, dx3ValHomoC3311;
+real dx1ValHomoC1122, dx2ValHomoC2222, dx3ValHomoC3322;
+real dx1ValHomoC1133, dx2ValHomoC2233, dx3ValHomoC3333;
+real dx1ValHomoC2112, dx2ValHomoC1212;
+real dx2ValHomoC3223, dx3ValHomoC2323;
+real dx1ValHomoC3131, dx3ValHomoC1331;
+CellVh0 dx1ValC1111, dx2ValC2211, dx3ValC3311;
+CellVh0 dx1ValC1122, dx2ValC2222, dx3ValC3322;
+CellVh0 dx1ValC1133, dx2ValC2233, dx3ValC3333;
+CellVh0 dx1ValC2112, dx2ValC1212;
+CellVh0 dx2ValC3223, dx3ValC2323;
+CellVh0 dx1ValC3131, dx3ValC1331;
+//------------------------------------
+CellVh D1111, D2211, D3311, D1211, D2311, D3111; 
+CellVh D1122, D2222, D3322, D1222, D2322, D3122;
+CellVh D1133, D2233, D3333, D1233, D2333, D3133;
+CellVh D1112, D2212, D3312, D1212, D2312, D3112;
+CellVh D1123, D2223, D3323, D1223, D2323, D3123;
+CellVh D1131, D2231, D3331, D1231, D2331, D3131;
+//------------------------------------
+CellVh dx111sita11, dx211sita12, dx311sita13, dx111sita21, dx211sita22, dx311sita23, dx111sita31, dx211sita32, dx311sita33;//u11,v11
+CellVh dx122sita11, dx222sita12, dx322sita13, dx122sita21, dx222sita22, dx322sita23, dx122sita31, dx222sita32, dx322sita33;//u11,v11
+CellVh dx133sita11, dx233sita12, dx333sita13, dx133sita21, dx233sita22, dx333sita23, dx133sita31, dx233sita32, dx333sita33;//u11,v11
+CellVh dx112sita11, dx212sita12, dx312sita13, dx112sita21, dx212sita22, dx312sita23, dx112sita31, dx212sita32, dx312sita33;//u11,v11
+CellVh dx123sita11, dx223sita12, dx323sita13, dx123sita21, dx223sita22, dx323sita23, dx123sita31, dx223sita32, dx323sita33;//u11,v11
+CellVh dx131sita11, dx231sita12, dx331sita13, dx131sita21, dx231sita22, dx331sita23, dx131sita31, dx231sita32, dx331sita33;//u11,v11
+//------------------------------------
+CellVh MU11, MV11, MW11;
+problem CellMUV11([MU11, MV11, MW11], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(MU11, MV11, MW11)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(dx1ValHomoC1111*uu+dx2ValHomoC2211*vv+dx3ValHomoC3311*ww)
+	   -int3d(CellTh)(dx1ValC1111*uu+dx2ValC2211*vv+dx3ValC3311*ww)
+	   -int3d(CellTh)(dx111sita11*uu+dx211sita12*uu+dx311sita13*uu+dx111sita21*vv+dx211sita22*vv+dx311sita23*vv+dx111sita31*ww+dx211sita32*ww+dx311sita33*ww)
+	   +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1111)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1211)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3111)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1211)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2211)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2311)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3111)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2311)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3311)
+       +on(1, 2, 3, 4, 5, 6, MU11=0, MV11=0, MW11=0);
+
+CellVh MU22, MV22, MW22;
+problem CellMUV22([MU22, MV22, MW22], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(MU22, MV22, MW22)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(dx1ValHomoC1122*uu+dx2ValHomoC2222*vv+dx3ValHomoC3322*ww)
+	   -int3d(CellTh)(dx1ValC1122*uu+dx2ValC2222*vv+dx3ValC3322*ww)
+	   -int3d(CellTh)(dx122sita11*uu+dx222sita12*uu+dx322sita13*uu+dx122sita21*vv+dx222sita22*vv+dx322sita23*vv+dx122sita31*ww+dx222sita32*ww+dx322sita33*ww)
+	   +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1122)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1222)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3122)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1222)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2222)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2322)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3122)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2322)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3322)
+       +on(1, 2, 3, 4, 5, 6, MU22=0, MV22=0, MW22=0);
+	   
+CellVh MU33, MV33, MW33;
+problem CellMUV33([MU33, MV33, MW33], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(MU33, MV33, MW33)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(dx1ValHomoC1133*uu+dx2ValHomoC2233*vv+dx3ValHomoC3333*ww)
+	   -int3d(CellTh)(dx1ValC1133*uu+dx2ValC2233*vv+dx3ValC3333*ww)
+	   -int3d(CellTh)(dx133sita11*uu+dx233sita12*uu+dx333sita13*uu+dx133sita21*vv+dx233sita22*vv+dx333sita23*vv+dx133sita31*ww+dx233sita32*ww+dx333sita33*ww)
+	   +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1133)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1233)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3133)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1233)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2233)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2333)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3133)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2333)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3333)
+       +on(1, 2, 3, 4, 5, 6, MU33=0, MV33=0, MW33=0);
+	   
+CellVh MU12, MV12, MW12;
+problem CellMUV12([MU12, MV12, MW12], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(MU12, MV12, MW12)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(dx1ValHomoC2112*vv+dx2ValHomoC1212*uu)
+	   -int3d(CellTh)(dx1ValC2112*vv+dx2ValC1212*uu)
+	   -int3d(CellTh)(dx112sita11*uu+dx212sita12*uu+dx312sita13*uu+dx112sita21*vv+dx212sita22*vv+dx312sita23*vv+dx112sita31*ww+dx212sita32*ww+dx312sita33*ww)
+	   +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1112)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1212)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3112)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1212)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2212)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2312)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3112)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2312)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3312)
+       +on(1, 2, 3, 4, 5, 6, MU12=0, MV12=0, MW12=0);
+
+CellVh MU23, MV23, MW23;
+problem CellMUV23([MU23, MV23, MW23], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(MU23, MV23, MW23)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(dx2ValHomoC3223*ww+dx3ValHomoC2323*vv)
+	   -int3d(CellTh)(dx2ValC3223*ww+dx3ValC2323*vv)
+	   -int3d(CellTh)(dx123sita11*uu+dx223sita12*uu+dx323sita13*uu+dx123sita21*vv+dx223sita22*vv+dx323sita23*vv+dx123sita31*ww+dx223sita32*ww+dx323sita33*ww)
+	   +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1123)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1223)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3123)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1223)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2223)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2323)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3123)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2323)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3323)
+       +on(1, 2, 3, 4, 5, 6, MU23=0, MV23=0, MW23=0);
+	   
+CellVh MU31, MV31, MW31;
+problem CellMUV31([MU31, MV31, MW31], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(MU31, MV31, MW31)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(dx1ValHomoC3131*ww+dx3ValHomoC1331*uu)
+	   -int3d(CellTh)(dx1ValC3131*ww+dx3ValC1331*uu)
+	   -int3d(CellTh)(dx131sita11*uu+dx231sita12*uu+dx331sita13*uu+dx131sita21*vv+dx231sita22*vv+dx331sita23*vv+dx131sita31*ww+dx231sita32*ww+dx331sita33*ww)
+	   +int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1131)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1231)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3131)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D1231)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2231)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2331)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3131)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D2331)
+       +int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*D3331)
+       +on(1, 2, 3, 4, 5, 6, MU31=0, MV31=0, MW31=0);	   
+//添加的力学问题单胞函数
+CellVh E11, E12, E22, E33, E23, E31; 
+CellVh dx1sita11, dx2sita12, dx3sita13, dx1sita21, dx2sita22, dx3sita23, dx1sita31, dx2sita32, dx3sita33;//Q1,Q2
+real dx1ValHomobeta11, dx2ValHomobeta22, dx3ValHomobeta33;
+CellVh0 dx1Valbeta11, dx2Valbeta22, dx3Valbeta33;
+CellVh Q1,Q2,Q3;
+problem CellQ([Q1, Q2, Q3], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(Q1, Q2, Q3)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)(dx1sita11*uu+dx2sita12*uu+dx3sita13*uu+dx1sita21*vv+dx2sita22*vv+dx3sita23*vv+dx1sita31*ww+dx2sita32*ww+dx3sita33*ww)
+	   +int3d(CellTh)(dx1Valbeta11*uu+dx2Valbeta22*vv+dx3Valbeta33*ww)
+	   -int3d(CellTh)(dx1ValHomobeta11*uu+dx2ValHomobeta22*vv+dx3ValHomobeta33*ww)
+	   -int3d(CellTh)(strain(uu, vv, ww)'*C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E11)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E12)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E31)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E12)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E22)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E23)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E31)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E23)
+       -int3d(CellTh)(strain(uu, vv, ww)'*C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*E33)	   
+       +on(1, 2, 3, 4, 5, 6, Q1=0, Q2=0, Q3=0);
+//将二阶单胞函数进一步分解后需要添加的新的单胞函数
+/* CellVh ZQ1,ZQ2;
+problem CellZQ([ZQ1, ZQ2], [uu, vv])=
+        int2d(CellTh)(strain(ZQ1, ZQ2)'*C(Ea,Eb,Ec,nu,RHT)*strain(uu, vv))        
+	   +int2d(CellTh)((material(ba,bb,bc,RHT))*uu-valHomobeta11*uu+strain(ub, vb)'*Con11(Ea,Eb,Ec,nu,RHT)*uu)
+	   +int2d(CellTh)(strain(ub, vb)'*Con12(Ea,Eb,Ec,nu,RHT)*vv)
+       +on(1, 2, 3, 4, ZQ1=0, ZQ2=0); */
+//添加动力学单胞函数
+CellVh F11, F12, F13;
+	problem CellF1([F11, F12, F13], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(F11, F12, F13)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)((rho-homorho)*uu)                      
+       +on(1, 2, 3, 4, 5, 6, F11=0, F12=0, F13=0); 
+    //plot(u12, cmm="u12", fill=true, value=true, wait=true); 
+    //plot(v12, cmm="v12", fill=true, value=true, wait=true);
+
+CellVh F21, F22, F23;
+	problem CellF2([F21, F22, F23], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(F21, F22, F23)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)((rho-homorho)*vv)                       
+       +on(1, 2, 3, 4, 5, 6, F21=0, F22=0, F23=0);
+	   
+CellVh F31, F32, F33;
+	problem CellF3([F31, F32, F33], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(F31, F32, F33)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+       +int3d(CellTh)((rho-homorho)*ww)                       
+       +on(1, 2, 3, 4, 5, 6, F31=0, F32=0, F33=0);	   
+//不同于传统柱坐标系的由于非线性产生的两种新的单胞函数	 
+//添加d(T)*strain对应的二阶单胞函数
+CellVh wu111, wv111, ww111;
+problem CellProW111([wu111, wv111, ww111], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu111, wv111, ww111)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N1*strain(uu, vv, ww)'*C1(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N1*strain(u11, v11, w11)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu111=0, wv111=0, ww111=0);
+
+CellVh wu112, wv112, ww112;
+problem CellProW112([wu112, wv112, ww112], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu112, wv112, ww112)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N1*strain(uu, vv, ww)'*C4(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N1*strain(u12, v12, w12)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu112=0, wv112=0, ww112=0);
+
+CellVh wu122, wv122, ww122;
+problem CellProW122([wu122, wv122, ww122], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu122, wv122, ww122)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N1*strain(uu, vv, ww)'*C2(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N1*strain(u22, v22, w22)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu122=0, wv122=0, ww122=0);
+
+CellVh wu133, wv133, ww133;
+problem CellProW133([wu133, wv133, ww133], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu133, wv133, ww133)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N1*strain(uu, vv, ww)'*C3(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N1*strain(u33, v33, w33)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu133=0, wv133=0, ww133=0);
+
+CellVh wu123, wv123, ww123;
+problem CellProW123([wu123, wv123, ww123], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu123, wv123, ww123)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N1*strain(uu, vv, ww)'*C5(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N1*strain(u23, v23, w23)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu123=0, wv123=0, ww123=0);
+
+CellVh wu131, wv131, ww131;
+problem CellProW131([wu131, wv131, ww131], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu131, wv131, ww131)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N1*strain(uu, vv, ww)'*C6(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N1*strain(u31, v31, w31)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu131=0, wv131=0, ww131=0);
+	   
+CellVh wu211, wv211, ww211;
+problem CellProW211([wu211, wv211, ww211], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu211, wv211, ww211)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N2*strain(uu, vv, ww)'*C1(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N2*strain(u11, v11, w11)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu211=0, wv211=0, ww211=0);
+
+CellVh wu212, wv212, ww212;
+problem CellProW212([wu212, wv212, ww212], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu212, wv212, ww212)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N2*strain(uu, vv, ww)'*C4(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N2*strain(u12, v12, w12)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu212=0, wv212=0, ww212=0);
+
+CellVh wu222, wv222, ww222;
+problem CellProW222([wu222, wv222, ww222], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu222, wv222, ww222)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N2*strain(uu, vv, ww)'*C2(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N2*strain(u22, v22, w22)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu222=0, wv222=0, ww222=0);
+
+CellVh wu233, wv233, ww233;
+problem CellProW233([wu233, wv233, ww233], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu233, wv233, ww233)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N2*strain(uu, vv, ww)'*C3(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N2*strain(u33, v33, w33)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu233=0, wv233=0, ww233=0);
+
+CellVh wu223, wv223, ww223;
+problem CellProW223([wu223, wv223, ww223], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu223, wv223, ww223)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N2*strain(uu, vv, ww)'*C5(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N2*strain(u23, v23, w23)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu223=0, wv223=0, ww223=0);
+
+CellVh wu231, wv231, ww231;
+problem CellProW231([wu231, wv231, ww231], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu231, wv231, ww231)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N2*strain(uu, vv, ww)'*C6(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N2*strain(u31, v31, w31)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu231=0, wv231=0, ww231=0);	
+	   
+CellVh wu311, wv311, ww311;
+problem CellProW311([wu311, wv311, ww311], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu311, wv311, ww311)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N3*strain(uu, vv, ww)'*C1(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N3*strain(u11, v11, w11)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu311=0, wv311=0, ww311=0);
+
+CellVh wu312, wv312, ww312;
+problem CellProW312([wu312, wv312, ww312], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu312, wv312, ww312)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N3*strain(uu, vv, ww)'*C4(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N3*strain(u12, v12, w12)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu312=0, wv312=0, ww312=0);
+
+CellVh wu322, wv322, ww322;
+problem CellProW322([wu322, wv322, ww322], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu322, wv322, ww322)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N3*strain(uu, vv, ww)'*C2(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N3*strain(u22, v22, w22)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu322=0, wv322=0, ww322=0);
+
+CellVh wu333, wv333, ww333;
+problem CellProW333([wu333, wv333, ww333], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu333, wv333, ww333)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N3*strain(uu, vv, ww)'*C3(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N3*strain(u33, v33, w33)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu333=0, wv333=0, ww333=0);
+
+CellVh wu323, wv323, ww323;
+problem CellProW323([wu323, wv323, ww323], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu323, wv323, ww323)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N3*strain(uu, vv, ww)'*C5(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N3*strain(u23, v23, w23)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu323=0, wv323=0, ww323=0);
+
+CellVh wu331, wv331, ww331;
+problem CellProW331([wu331, wv331, ww331], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(wu331, wv331, ww331)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N3*strain(uu, vv, ww)'*C6(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66))
+	   +int3d(CellTh)(N3*strain(u31, v31, w31)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, wu331=0, wv331=0, ww331=0);	   
+//添加d(T)*(T0-T)对应的二阶单胞函数  
+CellVh X11, X12, X13;
+	problem CellX1([X11, X12, X13], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(X11, X12, X13)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N1*(material(bb,2*bc,0,RHT))*(dx(uu)+dy(vv)+dz(ww)))
+	   +int3d(CellTh)(N1*strain(ub, vb, wb)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, X11=0, X12=0, X13=0); 
+
+CellVh X21, X22, X23;
+	problem CellX2([X21, X22, X23], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(X21, X22, X23)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N2*(material(bb,2*bc,0,RHT))*(dx(uu)+dy(vv)+dz(ww)))
+	   +int3d(CellTh)(N2*strain(ub, vb, wb)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, X21=0, X22=0, X23=0);
+	   
+CellVh X31, X32, X33;
+	problem CellX3([X31, X32, X33], [uu, vv, ww], solver=GMRES, eps=1.0e-8)=
+        int3d(CellTh)(strain(X31, X32, X33)'*C(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)*strain(uu, vv, ww))
+	   +int3d(CellTh)(N3*(material(bb,2*bc,0,RHT))*(dx(uu)+dy(vv)+dz(ww)))
+	   +int3d(CellTh)(N3*strain(ub, vb, wb)'*C(dk11,dk12,dk13,dk21,dk22,dk23,dk31,dk32,dk33,dk44,dk55,dk66)*strain(uu, vv, ww))
+       +on(1, 2, 3, 4, 5, 6, X31=0, X32=0, X33=0);
+//*******************************热学问题二阶单胞函数************************************
+//添加热动力学单胞函数
+CellVh S;
+real valHomoS;//均匀化系数在固定点的值
+	problem CellS(S, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(S)*dx(v)+(material(aa,ab,ac,RHT))*dy(S)*dy(v)+(material(aa,ab,ac,RHT))*dz(S)*dz(v))
+       +int3d(CellTh)((material(pca,pcb,pcc,RHT))*v)
+       -int3d(CellTh)(valHomoS*v)
+	   -int3d(CellTh)((material(da,db,dc,RHT))*dx(ub)*v+(material(da,db,dc,RHT))*dy(vb)*v+(material(da,db,dc,RHT))*dz(wb)*v)
++on(1,2,3,4,5,6, S=0);
+
+//添加的热学问题二阶单胞函数
+CellVh R1, dx1AijDM1, dx2AijDM1, dx3AijDM1, dx1M1, dx2M1, dx3M1;
+//dx1N1, dx2N1为一阶单胞函数N1关于两个方向宏观变量求偏导数
+//dx1AijDN1, dx2AijDN1为一阶单胞函数的微观变量导数再关于宏观变量求导数
+//特别注意关于y的导数时必须乘以1/r这个拟周期宏观变量
+real dx1ValHomoA11, dx2ValHomoA11;//均匀化系数在固定点的值
+CellVh0 dx1ValA11, dx2ValA11;//均匀化系数在固定点的值
+problem CellR1(R1, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(R1)*dx(v)+(material(aa,ab,ac,RHT))*dy(R1)*dy(v)+(material(aa,ab,ac,RHT))*dz(R1)*dz(v))
+       +int3d(CellTh)(dx1ValHomoA11*v)
+	   -int3d(CellTh)(dx1ValA11*v)
+       -int3d(CellTh)(dx1AijDM1*v)
+       -int3d(CellTh)(dx2AijDM1*v)
+       -int3d(CellTh)(dx3AijDM1*v)
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx1M1*dx(v))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx2M1*dy(v))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx3M1*dz(v))
+	   +on(1,2,3,4,5,6, R1=0);
+
+CellVh R2, dx1AijDM2, dx2AijDM2, dx3AijDM2, dx1M2, dx2M2, dx3M2;
+//dx1N2, dx2N2为一阶单胞函数N2关于两个方向宏观变量求偏导数
+//dx1AijDN2, dx2AijDN2为一阶单胞函数的微观变量导数再关于宏观变量求导数
+real dx1ValHomoA22, dx2ValHomoA22;//均匀化系数在固定点的值
+CellVh0 dx1ValA22, dx2ValA22;//均匀化系数在固定点的值
+problem CellR2(R2, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(R2)*dx(v)+(material(aa,ab,ac,RHT))*dy(R2)*dy(v)+(material(aa,ab,ac,RHT))*dz(R2)*dz(v))
+       +int3d(CellTh)(dx2ValHomoA22*v)
+	   -int3d(CellTh)(dx2ValA22*v)
+       -int3d(CellTh)(dx1AijDM2*v)
+       -int3d(CellTh)(dx2AijDM2*v)
+       -int3d(CellTh)(dx3AijDM2*v)
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx1M2*dx(v))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx2M2*dy(v))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx3M2*dz(v))
+	   +on(1,2,3,4,5,6, R2=0); 
+	   
+CellVh RR3, dx1AijDM3, dx2AijDM3, dx3AijDM3, dx1M3, dx2M3, dx3M3;//R3为内含变量,需要重新命名变量
+//dx1N2, dx2N2为一阶单胞函数N2关于两个方向宏观变量求偏导数
+//dx1AijDN2, dx2AijDN2为一阶单胞函数的微观变量导数再关于宏观变量求导数
+real dx1ValHomoA33, dx2ValHomoA33, dx3ValHomoA33;//均匀化系数在固定点的值
+CellVh0 dx1ValA33, dx2ValA33, dx3ValA33;//均匀化系数在固定点的值
+problem CellR3(RR3, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(RR3)*dx(v)+(material(aa,ab,ac,RHT))*dy(RR3)*dy(v)+(material(aa,ab,ac,RHT))*dz(RR3)*dz(v))
+       +int3d(CellTh)(dx3ValHomoA33*v)
+	   -int3d(CellTh)(dx3ValA33*v)
+       -int3d(CellTh)(dx1AijDM3*v)
+       -int3d(CellTh)(dx2AijDM3*v)
+       -int3d(CellTh)(dx3AijDM3*v)
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx1M3*dx(v))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx2M3*dy(v))
+       +int3d(CellTh)((material(aa,ab,ac,RHT))*dx3M3*dz(v))
+	   +on(1,2,3,4,5,6, RR3=0);	   
+//二阶单胞函数分离后需要添加的新的单胞函数
+real valHomoA11, valHomoA22, valHomoA33; //均匀化系数在固定宏观点的值,这是拟周期单胞函数具有的性质
+// CellVh ZR1;
+// problem CellZR1(ZR1, v) = 
+        // int2d(CellTh)((material(aa,ab,ac,RHT))*dx(ZR1)*dx(v)+(material(aa,ab,ac,RHT))*dy(ZR1)*dy(v))
+      	// +int2d(CellTh)(valHomoA11*v)
+	   // -int2d(CellTh)((material(aa,ab,ac,RHT))*v)
+	   // -int2d(CellTh)((material(aa,ab,ac,RHT))*dx(N1)*v)
+// +on(1,2,3,4, ZR1=0);
+
+// CellVh ZR2;
+// problem CellZR2(ZR2, v) = 
+        // int2d(CellTh)((material(aa,ab,ac,RHT))*dx(ZR2)*dx(v)+(material(aa,ab,ac,RHT))*dy(ZR2)*dy(v))
+      	// -int2d(CellTh)((material(aa,ab,ac,RHT))*dx(N2)*v)
+// +on(1,2,3,4, ZR2=0);
+//添加热力学二阶单胞主函数
+CellVh N11;
+    problem CellN11(N11, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N11)*dx(v)+dy(N11)*dy(v)+dz(N11)*dz(v)))
+       -int3d(CellTh)(((material(aa,ab,ac,RHT))-valHomoA11+(material(aa,ab,ac,RHT))*dx(N1))*v-(material(aa,ab,ac,RHT))*N1*dx(v)) 
+    +on(1,2,3,4,5,6, N11=0);
+    //plot(N11, wait=1, value=1, fill=1);
+CellVh N12;
+    problem CellN12(N12, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N12)*dx(v)+dy(N12)*dy(v)+dz(N12)*dz(v)))
+       -int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N2)*v-N2*dx(v)))
+    +on(1,2,3,4,5,6, N12=0);
+    //plot(N12, wait=1, value=1, fill=1);
+CellVh N21;
+    problem CellN21(N21, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N21)*dx(v)+dy(N21)*dy(v)+dz(N21)*dz(v)))
+       -int3d(CellTh)((material(aa,ab,ac,RHT))*(dy(N1)*v-N1*dy(v)))
+    +on(1,2,3,4,5,6, N21=0);
+    //plot(N21, wait=1, value=1, fill=1);
+CellVh N22;
+    problem CellN22(N22, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N22)*dx(v)+dy(N22)*dy(v)+dz(N22)*dz(v)))
+       -int3d(CellTh)(((material(aa,ab,ac,RHT))-valHomoA22+(material(aa,ab,ac,RHT))*dy(N2))*v-(material(aa,ab,ac,RHT))*N2*dy(v))
+    +on(1,2,3,4,5,6, N22=0);
+    //plot(N22, wait=1, value=1, fill=1);
+	
+CellVh N33;
+    problem CellN33(N33, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N33)*dx(v)+dy(N33)*dy(v)+dz(N33)*dz(v)))
+       -int3d(CellTh)(((material(aa,ab,ac,RHT))-valHomoA33+(material(aa,ab,ac,RHT))*dz(N3))*v-(material(aa,ab,ac,RHT))*N3*dz(v)) 
+    +on(1,2,3,4,5,6, N33=0);
+    //plot(N33, wait=1, value=1, fill=1);
+CellVh N23;
+    problem CellN23(N23, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N23)*dx(v)+dy(N23)*dy(v)+dz(N23)*dz(v)))
+       -int3d(CellTh)((material(aa,ab,ac,RHT))*(dy(N3)*v-N3*dy(v)))
+    +on(1,2,3,4,5,6, N23=0);
+    //plot(N23, wait=1, value=1, fill=1);
+CellVh N32;
+    problem CellN32(N32, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N32)*dx(v)+dy(N32)*dy(v)+dz(N32)*dz(v)))
+       -int3d(CellTh)((material(aa,ab,ac,RHT))*(dz(N2)*v-N2*dz(v)))
+    +on(1,2,3,4,5,6, N32=0);
+    //plot(N23, wait=1, value=1, fill=1);
+CellVh N31;
+    problem CellN31(N31, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N31)*dx(v)+dy(N31)*dy(v)+dz(N31)*dz(v)))
+       -int3d(CellTh)((material(aa,ab,ac,RHT))*(dz(N1)*v-N1*dz(v)))
+    +on(1,2,3,4,5,6, N31=0);
+    //plot(N31, wait=1, value=1, fill=1);	
+CellVh N13;
+    problem CellN13(N13, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N13)*dx(v)+dy(N13)*dy(v)+dz(N13)*dz(v)))
+       -int3d(CellTh)((material(aa,ab,ac,RHT))*(dx(N3)*v-N3*dx(v)))
+    +on(1,2,3,4,5,6, N13=0);
+    //plot(N31, wait=1, value=1, fill=1);	
+//添加双向耦合单胞函数
+real valHomodeta11, valHomodeta22, valHomodeta33; 
+CellVh G11;
+problem CellG11(G11, v, solver=GMRES, eps=1.0e-8) = 
+          int3d(CellTh)((material(aa,ab,ac,RHT))*dx(G11)*dx(v)+(material(aa,ab,ac,RHT))*dy(G11)*dy(v)+(material(aa,ab,ac,RHT))*dz(G11)*dz(v))
+         -int3d(CellTh)(valHomodeta11*v)
+         +int3d(CellTh)((material(da,db,dc,RHT))*v)
+         +int3d(CellTh)((material(da,db,dc,RHT))*(dx(u11)+dy(v11)+dz(w11))*v)
+         +on(1,2,3,4,5,6, G11=0);
+CellVh G12;
+	problem CellG12(G12, v, solver=GMRES, eps=1.0e-8) = 
+          int3d(CellTh)((material(aa,ab,ac,RHT))*dx(G12)*dx(v)+(material(aa,ab,ac,RHT))*dy(G12)*dy(v)+(material(aa,ab,ac,RHT))*dz(G12)*dz(v))
+          +int3d(CellTh)((material(da,db,dc,RHT))*(dx(u12)+dy(v12)+dz(w12))*v)
+          +on(1,2,3,4,5,6, G12=0);
+CellVh G22;
+	problem CellG22(G22, v, solver=GMRES, eps=1.0e-8) = 
+          int3d(CellTh)((material(aa,ab,ac,RHT))*dx(G22)*dx(v)+(material(aa,ab,ac,RHT))*dy(G22)*dy(v)+(material(aa,ab,ac,RHT))*dz(G22)*dz(v))
+          -int3d(CellTh)(valHomodeta22*v)
+          +int3d(CellTh)((material(da,db,dc,RHT))*v)
+          +int3d(CellTh)((material(da,db,dc,RHT))*(dx(u22)+dy(v22)+dz(w22))*v)
+          +on(1,2,3,4,5,6, G22=0);
+		  
+CellVh G33;
+problem CellG33(G33, v, solver=GMRES, eps=1.0e-8) = 
+          int3d(CellTh)((material(aa,ab,ac,RHT))*dx(G33)*dx(v)+(material(aa,ab,ac,RHT))*dy(G33)*dy(v)+(material(aa,ab,ac,RHT))*dz(G33)*dz(v))
+         -int3d(CellTh)(valHomodeta33*v)
+         +int3d(CellTh)((material(da,db,dc,RHT))*v)
+         +int3d(CellTh)((material(da,db,dc,RHT))*(dx(u33)+dy(v33)+dz(w33))*v)
+         +on(1,2,3,4,5,6, G33=0);
+		 
+CellVh G23;
+	problem CellG23(G23, v, solver=GMRES, eps=1.0e-8) = 
+          int3d(CellTh)((material(aa,ab,ac,RHT))*dx(G23)*dx(v)+(material(aa,ab,ac,RHT))*dy(G23)*dy(v)+(material(aa,ab,ac,RHT))*dz(G23)*dz(v))
+          +int3d(CellTh)((material(da,db,dc,RHT))*(dx(u23)+dy(v23)+dz(w23))*v)
+          +on(1,2,3,4,5,6, G23=0);
+		  
+CellVh G31;
+	problem CellG31(G31, v, solver=GMRES, eps=1.0e-8) = 
+          int3d(CellTh)((material(aa,ab,ac,RHT))*dx(G31)*dx(v)+(material(aa,ab,ac,RHT))*dy(G31)*dy(v)+(material(aa,ab,ac,RHT))*dz(G31)*dz(v))        
+          +int3d(CellTh)((material(da,db,dc,RHT))*(dx(u31)+dy(v31)+dz(w31))*v)
+          +on(1,2,3,4,5,6, G31=0);
+//不同于传统柱坐标系的由于非线性产生的两种新的单胞函数	 
+//添加d(T)*dx(T)对应的二阶单胞函数
+/* CellVh A1;
+problem CellA1(A1, v) = 
+        int2d(CellTh)((material(aa,ab,ac,RHT))*dx(A1)*dx(v)+(material(aa,ab,ac,RHT))*dy(A1)*dy(v))
+		+int2d(CellTh)(N1*((material(ab,2*ac,0,RHT))*dx(N1)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N1)*dy(v))) 
++on(1,2,3,4, A1=0);
+
+CellVh A2;
+problem CellA2(A2, v) = 
+        int2d(CellTh)((material(aa,ab,ac,RHT))*dx(A2)*dx(v)+(material(aa,ab,ac,RHT))*dy(A2)*dy(v))
+		+int2d(CellTh)(N2*((material(ab,2*ac,0,RHT))*dx(N2)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N2)*dy(v)))
++on(1,2,3,4, A2=0); */
+//添加d(T)*dy(T)对应的二阶单胞函数
+CellVh B11;
+problem CellB11(B11, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B11)*dx(v)+(material(aa,ab,ac,RHT))*dy(B11)*dy(v)+(material(aa,ab,ac,RHT))*dz(B11)*dz(v))
+		+int3d(CellTh)(N1*(material(ab,2*ac,0,RHT))*dx(v))	
+		+int3d(CellTh)(N1*((material(ab,2*ac,0,RHT))*dx(N1)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N1)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N1)*dz(v)))
++on(1,2,3,4,5,6, B11=0);
+
+CellVh B12;
+problem CellB12(B12, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B12)*dx(v)+(material(aa,ab,ac,RHT))*dy(B12)*dy(v)+(material(aa,ab,ac,RHT))*dz(B12)*dz(v))
+		+int3d(CellTh)(N1*(material(ab,2*ac,0,RHT))*dy(v))
+		+ int3d(CellTh)(N2*((material(ab,2*ac,0,RHT))*dx(N1)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N1)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N1)*dz(v)))
++on(1,2,3,4,5,6, B12=0);
+
+CellVh B21;
+problem CellB21(B21, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B21)*dx(v)+(material(aa,ab,ac,RHT))*dy(B21)*dy(v)+(material(aa,ab,ac,RHT))*dz(B21)*dz(v))
+		+int3d(CellTh)(N2*(material(ab,2*ac,0,RHT))*dx(v))
+		+ int3d(CellTh)(N1*((material(ab,2*ac,0,RHT))*dx(N2)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N2)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N2)*dz(v)))
++on(1,2,3,4,5,6, B21=0);
+
+CellVh B22;
+problem CellB22(B22, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B22)*dx(v)+(material(aa,ab,ac,RHT))*dy(B22)*dy(v)+(material(aa,ab,ac,RHT))*dz(B22)*dz(v))
+		+int3d(CellTh)(N2*(material(ab,2*ac,0,RHT))*dy(v))
+		+int3d(CellTh)(N2*((material(ab,2*ac,0,RHT))*dx(N2)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N2)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N2)*dz(v)))
++on(1,2,3,4,5,6, B22=0);
+
+CellVh B33;
+problem CellB33(B33, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B33)*dx(v)+(material(aa,ab,ac,RHT))*dy(B33)*dy(v)+(material(aa,ab,ac,RHT))*dz(B33)*dz(v))
+		+int3d(CellTh)(N3*(material(ab,2*ac,0,RHT))*dz(v))
+		+int3d(CellTh)(N3*((material(ab,2*ac,0,RHT))*dx(N3)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N3)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N3)*dz(v)))
++on(1,2,3,4,5,6, B33=0);
+
+CellVh B23;
+problem CellB23(B23, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B23)*dx(v)+(material(aa,ab,ac,RHT))*dy(B23)*dy(v)+(material(aa,ab,ac,RHT))*dz(B23)*dz(v))
+		+int3d(CellTh)(N2*(material(ab,2*ac,0,RHT))*dz(v))
+		+int3d(CellTh)(N3*((material(ab,2*ac,0,RHT))*dx(N2)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N2)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N2)*dz(v)))
++on(1,2,3,4,5,6, B23=0);
+
+CellVh B32;
+problem CellB32(B32, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B32)*dx(v)+(material(aa,ab,ac,RHT))*dy(B32)*dy(v)+(material(aa,ab,ac,RHT))*dz(B32)*dz(v))
+		+int3d(CellTh)(N3*(material(ab,2*ac,0,RHT))*dy(v))
+		+int3d(CellTh)(N2*((material(ab,2*ac,0,RHT))*dx(N3)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N3)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N3)*dz(v)))
++on(1,2,3,4,5,6, B32=0);
+
+CellVh B31;
+problem CellB31(B31, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B31)*dx(v)+(material(aa,ab,ac,RHT))*dy(B31)*dy(v)+(material(aa,ab,ac,RHT))*dz(B31)*dz(v))
+		+int3d(CellTh)(N3*(material(ab,2*ac,0,RHT))*dx(v))
+		+int3d(CellTh)(N1*((material(ab,2*ac,0,RHT))*dx(N3)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N3)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N3)*dz(v)))
++on(1,2,3,4,5,6, B31=0);
+
+CellVh B13;
+problem CellB13(B13, v, solver=GMRES, eps=1.0e-8) = 
+        int3d(CellTh)((material(aa,ab,ac,RHT))*dx(B13)*dx(v)+(material(aa,ab,ac,RHT))*dy(B13)*dy(v)+(material(aa,ab,ac,RHT))*dz(B13)*dz(v))
+		+int3d(CellTh)(N1*(material(ab,2*ac,0,RHT))*dz(v))
+		+int3d(CellTh)(N3*((material(ab,2*ac,0,RHT))*dx(N1)*dx(v)+(material(ab,2*ac,0,RHT))*dy(N1)*dy(v)+(material(ab,2*ac,0,RHT))*dz(N1)*dz(v)))
++on(1,2,3,4,5,6, B13=0);
+//**********************************************************************************
+//**********************************************************************************
+//********************利用插值减少计算量开始****************************************
+//由于均匀化材料系数仅依赖于温度故只需要一次插值即可
+/* real Tmin=373.15;
+real Tmax=473.15;
+int kk=200; //每隔0.5度设置一个区间,温度区间划分段数如果精度不够可以继续加细 */
+real Tmin=173.15;
+real Tmax=1173.15;//873.15会出现超出温度区间情况
+int kk=25; //每隔0.5度设置一个区间,温度区间划分段数如果精度不够可以继续加细
+real delt=(Tmax-Tmin)/kk;
+//定义保存插值材料系数的数组
+real[int] A11(kk+1),A22(kk+1),A12(kk+1),A33(kk+1),A23(kk+1),A31(kk+1);//热传导系数
+real[int] C1111(kk+1),C1122(kk+1),C1133(kk+1),C2211(kk+1),C2222(kk+1),C2233(kk+1),C3311(kk+1),C3322(kk+1),C3333(kk+1),C1212(kk+1),C2323(kk+1),C3131(kk+1);//刚度系数
+real[int] beta11(kk+1),beta22(kk+1),beta12(kk+1),beta33(kk+1),beta23(kk+1),beta31(kk+1);//热模量系数
+real[int] deta11(kk+1),deta22(kk+1),deta12(kk+1),deta33(kk+1),deta23(kk+1),deta31(kk+1);//双向耦合模量系数
+real[int] HS(kk+1);//密度*热容系数
+CellVh CTx=x;//细观x坐标
+CellVh CTy=y;//细观y坐标
+CellVh CTz=z;//细观z坐标
+int mnode=MacroVh.ndof;//记录精细有限元网格节点数
+int node=CellVh.ndof;//记录单胞网格节点数
+int ntriangle=CellTh.nt;
+real[int,int] CN1(node,kk+1),CN2(node,kk+1),CN3(node,kk+1);//热传导方程一阶单胞函数
+real[int,int] Cu11(node,kk+1),Cv11(node,kk+1),Cw11(node,kk+1),Cu12(node,kk+1),Cv12(node,kk+1),Cw12(node,kk+1),Cu22(node,kk+1),Cv22(node,kk+1),Cw22(node,kk+1);
+real[int,int] Cu33(node,kk+1),Cv33(node,kk+1),Cw33(node,kk+1),Cu23(node,kk+1),Cv23(node,kk+1),Cw23(node,kk+1),Cu31(node,kk+1),Cv31(node,kk+1),Cw31(node,kk+1);
+real[int,int] Cub(node,kk+1),Cvb(node,kk+1),Cwb(node,kk+1);//弹性动力学方程一阶单胞函数
+
+real[int,int] CN11(node,kk+1),CN12(node,kk+1),CN21(node,kk+1),CN22(node,kk+1),CN33(node,kk+1),CN23(node,kk+1),CN32(node,kk+1),CN13(node,kk+1),CN31(node,kk+1);
+real[int,int] CZR1(node,kk+1),CZR2(node,kk+1),CZR3(node,kk+1),CS(node,kk+1);
+real[int,int] CG11(node,kk+1),CG12(node,kk+1),CG22(node,kk+1),CG33(node,kk+1),CG23(node,kk+1),CG31(node,kk+1);
+real[int,int] CA1(node,kk+1),CA2(node,kk+1),CA3(node,kk+1);
+real[int,int] CB11(node,kk+1),CB12(node,kk+1),CB21(node,kk+1),CB22(node,kk+1),CB33(node,kk+1),CB23(node,kk+1),CB32(node,kk+1),CB13(node,kk+1),CB31(node,kk+1);//热传导方程二阶单胞函数
+//CR1(node,kk+1),CR2(node,kk+1)
+real[int,int] Cu111(node,kk+1),Cu112(node,kk+1),Cu122(node,kk+1),Cu133(node,kk+1),Cu123(node,kk+1),Cu131(node,kk+1);
+real[int,int] Cu211(node,kk+1),Cu212(node,kk+1),Cu222(node,kk+1),Cu233(node,kk+1),Cu223(node,kk+1),Cu231(node,kk+1);
+real[int,int] Cu311(node,kk+1),Cu312(node,kk+1),Cu322(node,kk+1),Cu333(node,kk+1),Cu323(node,kk+1),Cu331(node,kk+1);
+real[int,int] CZQ1(node,kk+1),CF11(node,kk+1),CF21(node,kk+1),CF31(node,kk+1);//弹性动力学方程二阶单胞函数
+real[int,int] Cwu111(node,kk+1),Cwu112(node,kk+1),Cwu122(node,kk+1),Cwu133(node,kk+1),Cwu123(node,kk+1),Cwu131(node,kk+1);
+real[int,int] Cwu211(node,kk+1),Cwu212(node,kk+1),Cwu222(node,kk+1),Cwu233(node,kk+1),Cwu223(node,kk+1),Cwu231(node,kk+1);
+real[int,int] Cwu311(node,kk+1),Cwu312(node,kk+1),Cwu322(node,kk+1),Cwu333(node,kk+1),Cwu323(node,kk+1),Cwu331(node,kk+1);
+real[int,int] CX11(node,kk+1),CX21(node,kk+1),CX31(node,kk+1);
+real[int,int] Cub1(node,kk+1),Cub2(node,kk+1),Cub3(node,kk+1);
+real[int,int] CZU11(node,kk+1),CZU12(node,kk+1),CZU22(node,kk+1),CZU33(node,kk+1),CZU23(node,kk+1),CZU31(node,kk+1);
+//CQ1(node,kk+1),CMU11(node,kk+1),CMU12(node,kk+1),CMU22(node,kk+1)
+real[int,int] Cv111(node,kk+1),Cv112(node,kk+1),Cv122(node,kk+1),Cv133(node,kk+1),Cv123(node,kk+1),Cv131(node,kk+1);
+real[int,int] Cv211(node,kk+1),Cv212(node,kk+1),Cv222(node,kk+1),Cv233(node,kk+1),Cv223(node,kk+1),Cv231(node,kk+1);
+real[int,int] Cv311(node,kk+1),Cv312(node,kk+1),Cv322(node,kk+1),Cv333(node,kk+1),Cv323(node,kk+1),Cv331(node,kk+1);
+real[int,int] CZQ2(node,kk+1),CF12(node,kk+1),CF22(node,kk+1),CF32(node,kk+1);//弹性动力学方程二阶单胞函数
+real[int,int] Cwv111(node,kk+1),Cwv112(node,kk+1),Cwv122(node,kk+1),Cwv133(node,kk+1),Cwv123(node,kk+1),Cwv131(node,kk+1);
+real[int,int] Cwv211(node,kk+1),Cwv212(node,kk+1),Cwv222(node,kk+1),Cwv233(node,kk+1),Cwv223(node,kk+1),Cwv231(node,kk+1);
+real[int,int] Cwv311(node,kk+1),Cwv312(node,kk+1),Cwv322(node,kk+1),Cwv333(node,kk+1),Cwv323(node,kk+1),Cwv331(node,kk+1);
+real[int,int] CX12(node,kk+1),CX22(node,kk+1),CX32(node,kk+1);
+real[int,int] Cvb1(node,kk+1),Cvb2(node,kk+1),Cvb3(node,kk+1);
+real[int,int] CZV11(node,kk+1),CZV12(node,kk+1),CZV22(node,kk+1),CZV33(node,kk+1),CZV23(node,kk+1),CZV31(node,kk+1);
+//CQ1(node,kk+1),CMU11(node,kk+1),CMU12(node,kk+1),CMU22(node,kk+1)
+real[int,int] Cw111(node,kk+1),Cw112(node,kk+1),Cw122(node,kk+1),Cw133(node,kk+1),Cw123(node,kk+1),Cw131(node,kk+1);
+real[int,int] Cw211(node,kk+1),Cw212(node,kk+1),Cw222(node,kk+1),Cw233(node,kk+1),Cw223(node,kk+1),Cw231(node,kk+1);
+real[int,int] Cw311(node,kk+1),Cw312(node,kk+1),Cw322(node,kk+1),Cw333(node,kk+1),Cw323(node,kk+1),Cw331(node,kk+1);
+real[int,int] CZQ3(node,kk+1),CF13(node,kk+1),CF23(node,kk+1),CF33(node,kk+1);//弹性动力学方程二阶单胞函数
+real[int,int] Cww111(node,kk+1),Cww112(node,kk+1),Cww122(node,kk+1),Cww133(node,kk+1),Cww123(node,kk+1),Cww131(node,kk+1);
+real[int,int] Cww211(node,kk+1),Cww212(node,kk+1),Cww222(node,kk+1),Cww233(node,kk+1),Cww223(node,kk+1),Cww231(node,kk+1);
+real[int,int] Cww311(node,kk+1),Cww312(node,kk+1),Cww322(node,kk+1),Cww333(node,kk+1),Cww323(node,kk+1),Cww331(node,kk+1);
+real[int,int] CX13(node,kk+1),CX23(node,kk+1),CX33(node,kk+1);
+real[int,int] Cwb1(node,kk+1),Cwb2(node,kk+1),Cwb3(node,kk+1);
+real[int,int] CZW11(node,kk+1),CZW12(node,kk+1),CZW22(node,kk+1),CZW33(node,kk+1),CZW23(node,kk+1),CZW31(node,kk+1);
+//CQ2(node,kk+1),CMV11(node,kk+1),CMV12(node,kk+1),CMV22(node,kk+1)
+//real[int,int] CCN1(cnode,kk+1),CCN2(cnode,kk+1),CCu11(cnode,kk+1),CCv11(cnode,kk+1),CCu12(cnode,kk+1),CCv12(cnode,kk+1),CCu22(cnode,kk+1),CCv22(cnode,kk+1),CCub(cnode,kk+1),CCvb(cnode,kk+1);
+//2016年1月5日添加
+//记录单胞网格单元信息即每个四面体的三个顶点编号
+int[int,int] information(ntriangle,4);
+for (int i=0;i<ntriangle;i++)
+{
+	information(i,0)=CellTh[i][0];
+	information(i,1)=CellTh[i][1];
+	information(i,2)=CellTh[i][2];
+	information(i,3)=CellTh[i][3];	
+}
+for (int i=0; i<kk+1; i+=1)
+{
+	    cout<<"Start this procedure!"<<endl;
+		RHT=Tmin+i*(Tmax-Tmin)/kk;
+		//基体和夹杂刚度参数计算
+		E1=material(Ea1,Eb1,Ec1,RHT);
+        E2=material(Ea2,Eb2,Ec2,RHT);
+        MMa1=HH(E1,nu1);
+        MMa1=inverse(MMa1);
+        MMa2=HH(E2,nu2);
+        MMa2=inverse(MMa2);
+        //单胞函数刚度系数定义
+        func k11 = MMa1(0,0)*(region==RM1) + MMa2(0,0)*(region==RM2);
+        func k12 = MMa1(0,1)*(region==RM1) + MMa2(0,1)*(region==RM2);
+        func k13 = MMa1(0,2)*(region==RM1) + MMa2(0,2)*(region==RM2);
+        func k21 = MMa1(1,0)*(region==RM1) + MMa2(1,0)*(region==RM2);
+        func k22 = MMa1(1,1)*(region==RM1) + MMa2(1,1)*(region==RM2);
+        func k23 = MMa1(1,2)*(region==RM1) + MMa2(1,2)*(region==RM2);
+        func k31 = MMa1(2,0)*(region==RM1) + MMa2(2,0)*(region==RM2);
+        func k32 = MMa1(2,1)*(region==RM1) + MMa2(2,1)*(region==RM2);
+        func k33 = MMa1(2,2)*(region==RM1) + MMa2(2,2)*(region==RM2);
+        func k44 = MMa1(3,3)*(region==RM1) + MMa2(3,3)*(region==RM2);
+        func k55 = MMa1(4,4)*(region==RM1) + MMa2(4,4)*(region==RM2);
+        func k66 = MMa1(5,5)*(region==RM1) + MMa2(5,5)*(region==RM2);
+		//一阶单胞函数求解
+		CellN1;
+		CellN2;
+		CellN3;
+		CellPro11;
+		CellPro12;
+		CellPro22;
+		CellPro33;
+		CellPro23;
+		CellPro31;
+		CellBeta;		
+        //计算该自由度上的均匀化系数的值
+	    //均匀化热传导系数
+	    A11(i) = int3d(CellTh)((material(aa,ab,ac,RHT))+(material(aa,ab,ac,RHT))*dx(N1));
+	    A12(i) = int3d(CellTh)((material(aa,ab,ac,RHT))*dx(N2));
+	    cout<<"1."<<A11(i)<<" "<<A12(i)<<endl;
+	    A22(i) = int3d(CellTh)((material(aa,ab,ac,RHT))+(material(aa,ab,ac,RHT))*dy(N2));
+	    A33(i) = int3d(CellTh)((material(aa,ab,ac,RHT))+(material(aa,ab,ac,RHT))*dz(N3));
+		A23(i) = int3d(CellTh)((material(aa,ab,ac,RHT))*dy(N3));
+		A31(i) = int3d(CellTh)((material(aa,ab,ac,RHT))*dz(N1));
+	    //均匀化弹性系数
+	    C1111(i)=int3d(CellTh)(k11+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+	    C1122(i)=int3d(CellTh)(k12+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));
+	    C1133(i)=int3d(CellTh)(k13+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));
+	
+        C2211(i)=int3d(CellTh)(k21+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+	    C2222(i)=int3d(CellTh)(k22+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));	  
+	    C2233(i)=int3d(CellTh)(k23+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));
+		
+        C3311(i)=int3d(CellTh)(k31+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u11, v11, w11)); 
+	    C3322(i)=int3d(CellTh)(k32+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u22, v22, w22));	  
+	    C3333(i)=int3d(CellTh)(k33+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u33, v33, w33));
+		
+        C1212(i)=int3d(CellTh)(k44+C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u12, v12, w12));
+	    C2323(i)=int3d(CellTh)(k55+C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u23, v23, w23));
+	    C3131(i)=int3d(CellTh)(k66+C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(u31, v31, w31));
+	    //均匀化热弹性系数
+        beta11(i)=int3d(CellTh)(material(ba,bb,bc,RHT)+C1(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+	    beta12(i)=int3d(CellTh)(C4(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+	    cout<<"6."<<beta11(i)<<" "<<beta12(i)<<endl;
+	    beta22(i)=int3d(CellTh)(material(ba,bb,bc,RHT)+C2(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+	    beta33(i)=int3d(CellTh)(material(ba,bb,bc,RHT)+C3(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+	    beta23(i)=int3d(CellTh)(C5(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb));  
+	    beta31(i)=int3d(CellTh)(C6(k11,k12,k13,k21,k22,k23,k31,k32,k33,k44,k55,k66)'*strain(ub, vb, wb)); 
+	    //均匀化热传导方程双向耦合模量
+	    deta11(i)=int3d(CellTh)(material(da,db,dc,RHT)+material(da,db,dc,RHT)*dx(u11)+material(da,db,dc,RHT)*dy(v11)+material(da,db,dc,RHT)*dz(w11)); 
+	    deta12(i)=int3d(CellTh)(material(da,db,dc,RHT)*dx(u12)+material(da,db,dc,RHT)*dy(v12)+material(da,db,dc,RHT)*dz(w12)); 
+        cout<<"7."<<deta11(i)<<" "<<deta12(i)<<endl;
+        deta22(i)=int3d(CellTh)(material(da,db,dc,RHT)+material(da,db,dc,RHT)*dx(u22)+material(da,db,dc,RHT)*dy(v22)+material(da,db,dc,RHT)*dz(w22)); 
+        deta33(i)=int3d(CellTh)(material(da,db,dc,RHT)+material(da,db,dc,RHT)*dx(u33)+material(da,db,dc,RHT)*dy(v33)+material(da,db,dc,RHT)*dz(w33));
+	    deta23(i)=int3d(CellTh)(material(da,db,dc,RHT)*dx(u23)+material(da,db,dc,RHT)*dy(v23)+material(da,db,dc,RHT)*dz(w23)); 
+	    deta31(i)=int3d(CellTh)(material(da,db,dc,RHT)*dx(u31)+material(da,db,dc,RHT)*dy(v31)+material(da,db,dc,RHT)*dz(w31)); 
+        //均匀化密度*热容系数    
+        HS(i)=int3d(CellTh)(material(pca,pcb,pcc,RHT)-material(da,db,dc,RHT)*dx(ub)-material(da,db,dc,RHT)*dy(vb)-material(da,db,dc,RHT)*dz(wb));
+        cout<<"8."<<HS(i)<<endl;				
+		//二阶单胞函数求解
+		dE1=material(Eb1,2*Ec1,0,RHT);
+        dE2=material(Eb2,2*Ec2,0,RHT);
+        dMMa1=HH(dE1,nu1);
+        dMMa1=inverse(dMMa1);
+        dMMa2=HH(dE2,nu2);
+        dMMa2=inverse(dMMa2);
+        func dk11 = dMMa1(0,0)*(region==RM1) + dMMa2(0,0)*(region==RM2);
+        func dk12 = dMMa1(0,1)*(region==RM1) + dMMa2(0,1)*(region==RM2);
+        func dk13 = dMMa1(0,2)*(region==RM1) + dMMa2(0,2)*(region==RM2);
+        func dk21 = dMMa1(1,0)*(region==RM1) + dMMa2(1,0)*(region==RM2);
+        func dk22 = dMMa1(1,1)*(region==RM1) + dMMa2(1,1)*(region==RM2);
+        func dk23 = dMMa1(1,2)*(region==RM1) + dMMa2(1,2)*(region==RM2);
+        func dk31 = dMMa1(2,0)*(region==RM1) + dMMa2(2,0)*(region==RM2);
+        func dk32 = dMMa1(2,1)*(region==RM1) + dMMa2(2,1)*(region==RM2);
+        func dk33 = dMMa1(2,2)*(region==RM1) + dMMa2(2,2)*(region==RM2);
+        func dk44 = dMMa1(3,3)*(region==RM1) + dMMa2(3,3)*(region==RM2);
+        func dk55 = dMMa1(4,4)*(region==RM1) + dMMa2(4,4)*(region==RM2);
+        func dk66 = dMMa1(5,5)*(region==RM1) + dMMa2(5,5)*(region==RM2);
+		//力学
+		valHomoC1111=C1111(i); 
+	    valHomoC1122=C1122(i); 
+        valHomoC1133=C1133(i);
+		valHomoC2211=C2211(i); 
+	    valHomoC2222=C2222(i); 
+        valHomoC2233=C2233(i);
+		valHomoC3311=C3311(i); 
+	    valHomoC3322=C3322(i); 
+        valHomoC3333=C3333(i);
+	    valHomoC1212=C1212(i);
+	    valHomoC2323=C2323(i);
+	    valHomoC3131=C3131(i);
+		CellPro111;
+		CellPro122;
+		CellPro133;
+		CellPro112;
+		CellPro123;
+		CellPro131;
+		CellPro211;
+		CellPro222;
+		CellPro233;
+		CellPro212;
+		CellPro223;
+		CellPro231;
+		CellPro311;
+		CellPro322;
+		CellPro333;
+		CellPro312;
+		CellPro323;
+		CellPro331;
+		valHomobeta11=beta11(i);
+	    valHomobeta22=beta22(i);
+	    valHomobeta33=beta33(i);
+		CellBeta21;
+		CellBeta22;
+		CellBeta23;	
+		CellF1;
+		CellF2;
+		CellF3;
+		CellProW111;
+		CellProW112;
+		CellProW122;
+		CellProW133;
+		CellProW123;
+		CellProW131;
+		CellProW211;
+		CellProW212;
+		CellProW222;
+		CellProW233;
+		CellProW223;
+		CellProW231;
+		CellProW311;
+		CellProW312;
+		CellProW322;
+		CellProW333;
+		CellProW323;
+		CellProW331;
+		CellX1;
+		CellX2;
+		CellX3;
+		//热学
+		valHomoS=HS(i);
+		CellS;
+		valHomoA11= A11(i);
+	    valHomoA22= A22(i);
+	    valHomoA33= A33(i);
+		CellN11;
+		CellN12;
+		CellN21;
+		CellN22;
+		CellN33;
+		CellN23;
+		CellN32;
+		CellN31;
+		CellN13;
+		valHomodeta11= deta11(i);
+	    valHomodeta22= deta22(i);
+	    valHomodeta33= deta33(i);
+		CellG11;
+		CellG12;
+		CellG22;
+		CellG33;
+		CellG23;
+		CellG31;
+		CellB11;
+		CellB12;
+		CellB21;
+		CellB22;
+		CellB33;
+		CellB23;
+		CellB32;
+		CellB13;
+		CellB31;
+		//保存该温度下的一阶单胞函数的值为计算带有宏观函数求导数的二阶单胞函数做准备
+		for(int j=0; j< CellVh.ndof; j+=1)//一个温度求一次单胞函数然后将单胞函数节点上的值保存到数组中
+		{
+			CN1(j,i)=N1[][j];CN2(j,i)=N2[][j];CN3(j,i)=N3[][j];
+            Cu11(j,i)=u11[][j];Cv11(j,i)=v11[][j];Cw11(j,i)=w11[][j];
+		    Cu12(j,i)=u12[][j];Cv12(j,i)=v12[][j];Cw12(j,i)=w12[][j];
+		    Cu22(j,i)=u22[][j];Cv22(j,i)=v22[][j];Cw22(j,i)=w22[][j];
+            Cu33(j,i)=u33[][j];Cv33(j,i)=v33[][j];Cw33(j,i)=w33[][j];
+		    Cu23(j,i)=u23[][j];Cv23(j,i)=v23[][j];Cw23(j,i)=w23[][j];
+		    Cu31(j,i)=u31[][j];Cv31(j,i)=v31[][j];Cw31(j,i)=w31[][j];
+		    Cub(j,i)=ub[][j];Cvb(j,i)=vb[][j];Cwb(j,i)=wb[][j];//记录一阶单胞函数值
+			
+			//二阶单胞函数插值
+		    CN11(j,i)=N11[][j];CN12(j,i)=N12[][j];CN21(j,i)=N21[][j];CN22(j,i)=N22[][j];CN33(j,i)=N33[][j];
+			CN23(j,i)=N23[][j];CN32(j,i)=N32[][j];CN13(j,i)=N13[][j];CN31(j,i)=N31[][j];
+			CS(j,i)=S[][j];
+		    CG11(j,i)=G11[][j];CG12(j,i)=G12[][j];CG22(j,i)=G22[][j];CG33(j,i)=G33[][j];CG23(j,i)=G23[][j];CG31(j,i)=G31[][j];
+			CB11(j,i)=B11[][j];CB12(j,i)=B12[][j];CB21(j,i)=B21[][j];CB22(j,i)=B22[][j];
+			CB33(j,i)=B33[][j];CB23(j,i)=B23[][j];CB32(j,i)=B32[][j];CB13(j,i)=B13[][j];CB31(j,i)=B31[][j];
+		
+		    Cu111(j,i)=u111[][j];Cu112(j,i)=u112[][j];Cu122(j,i)=u122[][j];Cu133(j,i)=u133[][j];Cu123(j,i)=u123[][j];Cu131(j,i)=u131[][j];
+		    Cu211(j,i)=u211[][j];Cu212(j,i)=u212[][j];Cu222(j,i)=u222[][j];Cu233(j,i)=u233[][j];Cu223(j,i)=u223[][j];Cu231(j,i)=u231[][j];
+		    Cu311(j,i)=u311[][j];Cu312(j,i)=u312[][j];Cu322(j,i)=u322[][j];Cu333(j,i)=u333[][j];Cu323(j,i)=u323[][j];Cu331(j,i)=u331[][j];
+		    CF11(j,i)=F11[][j];CF21(j,i)=F21[][j];CF31(j,i)=F31[][j];
+		    Cwu111(j,i)=wu111[][j];Cwu112(j,i)=wu112[][j];Cwu122(j,i)=wu122[][j];Cwu133(j,i)=wu133[][j];Cwu123(j,i)=wu123[][j];Cwu131(j,i)=wu131[][j];
+		    Cwu211(j,i)=wu211[][j];Cwu212(j,i)=wu212[][j];Cwu222(j,i)=wu222[][j];Cwu233(j,i)=wu233[][j];Cwu223(j,i)=wu223[][j];Cwu231(j,i)=wu231[][j];
+		    Cwu311(j,i)=wu311[][j];Cwu312(j,i)=wu312[][j];Cwu322(j,i)=wu322[][j];Cwu333(j,i)=wu333[][j];Cwu323(j,i)=wu323[][j];Cwu331(j,i)=wu331[][j];
+		    CX11(j,i)=X11[][j];CX21(j,i)=X21[][j];CX31(j,i)=X31[][j];
+            Cub1(j,i)=ub1[][j];Cub2(j,i)=ub2[][j];Cub3(j,i)=ub3[][j];
+		
+		    Cv111(j,i)=v111[][j];Cv112(j,i)=v112[][j];Cv122(j,i)=v122[][j];Cv133(j,i)=v133[][j];Cv123(j,i)=v123[][j];Cv131(j,i)=v131[][j];
+		    Cv211(j,i)=v211[][j];Cv212(j,i)=v212[][j];Cv222(j,i)=v222[][j];Cv233(j,i)=v233[][j];Cv223(j,i)=v223[][j];Cv231(j,i)=v231[][j];
+		    Cv311(j,i)=v311[][j];Cv312(j,i)=v312[][j];Cv322(j,i)=v322[][j];Cv333(j,i)=v333[][j];Cv323(j,i)=v323[][j];Cv331(j,i)=v331[][j];
+		    CF12(j,i)=F12[][j];CF22(j,i)=F22[][j];CF32(j,i)=F32[][j];//弹性动力学方程二阶单胞函数
+            Cwv111(j,i)=wv111[][j];Cwv112(j,i)=wv112[][j];Cwv122(j,i)=wv122[][j];Cwv133(j,i)=wv133[][j];Cwv123(j,i)=wv123[][j];Cwv131(j,i)=wv131[][j];
+		    Cwv211(j,i)=wv211[][j];Cwv212(j,i)=wv212[][j];Cwv222(j,i)=wv222[][j];Cwv233(j,i)=wv233[][j];Cwv223(j,i)=wv223[][j];Cwv231(j,i)=wv231[][j];
+		    Cwv311(j,i)=wv311[][j];Cwv312(j,i)=wv312[][j];Cwv322(j,i)=wv322[][j];Cwv333(j,i)=wv333[][j];Cwv323(j,i)=wv323[][j];Cwv331(j,i)=wv331[][j];
+		    CX12(j,i)=X12[][j];CX22(j,i)=X22[][j];CX32(j,i)=X32[][j];
+            Cvb1(j,i)=vb1[][j];Cvb2(j,i)=vb2[][j];Cvb3(j,i)=vb3[][j];
+			
+		    Cw111(j,i)=w111[][j];Cw112(j,i)=w112[][j];Cw122(j,i)=w122[][j];Cw133(j,i)=w133[][j];Cw123(j,i)=w123[][j];Cw131(j,i)=w131[][j];
+		    Cw211(j,i)=w211[][j];Cw212(j,i)=w212[][j];Cw222(j,i)=w222[][j];Cw233(j,i)=w233[][j];Cw223(j,i)=w223[][j];Cw231(j,i)=w231[][j];
+		    Cw311(j,i)=w311[][j];Cw312(j,i)=w312[][j];Cw322(j,i)=w322[][j];Cw333(j,i)=w333[][j];Cw323(j,i)=w323[][j];Cw331(j,i)=w331[][j];
+		    CF13(j,i)=F13[][j];CF23(j,i)=F23[][j];CF33(j,i)=F33[][j];//弹性动力学方程二阶单胞函数
+            Cww111(j,i)=ww111[][j];Cww112(j,i)=ww112[][j];Cww122(j,i)=ww122[][j];Cww133(j,i)=ww133[][j];Cww123(j,i)=ww123[][j];Cww131(j,i)=ww131[][j];
+		    Cww211(j,i)=ww211[][j];Cww212(j,i)=ww212[][j];Cww222(j,i)=ww222[][j];Cww233(j,i)=ww233[][j];Cww223(j,i)=ww223[][j];Cww231(j,i)=ww231[][j];
+		    Cww311(j,i)=ww311[][j];Cww312(j,i)=ww312[][j];Cww322(j,i)=ww322[][j];Cww333(j,i)=ww333[][j];Cww323(j,i)=ww323[][j];Cww331(j,i)=ww331[][j];
+		    CX13(j,i)=X13[][j];CX23(j,i)=X23[][j];CX33(j,i)=X33[][j];
+            Cwb1(j,i)=wb1[][j];Cwb2(j,i)=wb2[][j];Cwb3(j,i)=wb3[][j];
+			
+		}
+        cout<<"We complete the evaluation of cell functions!"<<endl;		
+}
+//********************利用插值减少计算量结束****************************************
+//**********************************************************************************
+//**********************************************************************************
+//*****************************5.非线性迭代开始*************************************
+HomoVh IU0,IV0,IW0,IT0;        //非线性迭代时的中间变量
+IU0=0.0;
+IV0=0.0;
+IW0=0.0;
+IT0=HTp;
+real err1,err2,err3,err4;//迭代误差限
+int k;//每一时间层非线性迭代次数
+real cellX,cellY,cellZ;//微观x,y,z坐标
+HomoVh Uerr,Verr,Werr,Terr;//均匀化解迭代误差函数
+MacroVh FUerr,FVerr,FWerr,FTerr;//精细有限元解迭代误差函数
+MacroVh MT0, MT1, MT2;
+MacroVh MU0, MV0, MW0, MU1, MV1, MW1, MU2, MV2, MW2;//均匀化解、一阶解、二阶解
+IFEU=0.0;
+IFEV=0.0;
+IFEW=0.0;
+IFET=Tp;
+real diff = 0.001;//有关宏观变量求导数时,使用中心差分时的两点距离
+
+ofstream time("time.txt");
+//L2相对误差
+ofstream TL20("TLHomo0.txt");
+ofstream TL21("TLHomo1.txt");
+ofstream TL22("TLHomo2.txt");
+ofstream UL20("ULHomo0.txt");
+ofstream UL21("ULHomo1.txt");
+ofstream UL22("ULHomo2.txt");
+ofstream VL20("VLHomo0.txt");
+ofstream VL21("VLHomo1.txt");
+ofstream VL22("VLHomo2.txt");
+ofstream WL20("WLHomo0.txt");
+ofstream WL21("WLHomo1.txt");
+ofstream WL22("WLHomo2.txt");
+ofstream UVWL0("UVWL0.txt");
+ofstream UVWL1("UVWL1.txt");
+ofstream UVWL2("UVWL2.txt");
+//H1相对误差
+ofstream TH10("THHomo0.txt");
+ofstream TH11("THHomo1.txt");
+ofstream TH12("THHomo2.txt");
+ofstream UH10("UHHomo0.txt");
+ofstream UH11("UHHomo1.txt");
+ofstream UH12("UHHomo2.txt");
+ofstream VH10("VHHomo0.txt");
+ofstream VH11("VHHomo1.txt");
+ofstream VH12("VHHomo2.txt");
+ofstream WH10("WHHomo0.txt");
+ofstream WH11("WHHomo1.txt");
+ofstream WH12("WHHomo2.txt");
+ofstream UVWH0("UVWH0.txt");
+ofstream UVWH1("UVWH1.txt");
+ofstream UVWH2("UVWH2.txt");
+ofstream error("error.txt");
+//对全局宏观节点按照不同单胞进行分类
+//为了计算具有关于宏观位置求导数的二阶单胞函数
+//单胞编号方式7***8***9单胞编号方式
+//单胞编号方式4***5***6单胞编号方式
+//单胞编号方式1***2***3单胞编号方式
+//确定宏观网格节点所属单胞网格的单元
+int[int] Tindex(mnode);	
+real phi0,phi1,phi2,phi3;
+for(int i=0; i< MacroVh.ndof; i++)//精细有限元细网格上二阶解组装按单个点来组装
+{
+	real cellX = Tx[][i]/epsilon-int(Tx[][i]/epsilon);
+    real cellY = Ty[][i]/epsilon-int(Ty[][i]/epsilon);
+    real cellZ = Tz[][i]/epsilon-int(Tz[][i]/epsilon);
+	for(int k=0; k<ntriangle; k++)//对单胞网格上所有三角形进行循环查找
+    {
+			//得到该四面体单元的四个节点编号
+			int[int] Tri(4);
+			for(int k1=0; k1<4; k1++)
+			{
+				Tri(k1)=CellTh[k][k1];
+			}
+			real xmin=CTx[][Tri(0)];
+			real xmax=CTx[][Tri(0)];
+			real ymin=CTy[][Tri(0)];
+			real ymax=CTy[][Tri(0)];
+			real zmin=CTz[][Tri(0)];
+			real zmax=CTz[][Tri(0)];
+			for(int k2=1; k2<4; k2++)
+			{
+				if(CTx[][Tri(k2)]<xmin)
+				  xmin=CTx[][Tri(k2)];
+			    if(CTx[][Tri(k2)]>xmax)
+				  xmax=CTx[][Tri(k2)];
+			    if(CTy[][Tri(k2)]<ymin)
+				  ymin=CTy[][Tri(k2)];
+			    if(CTy[][Tri(k2)]>ymax)
+				  ymax=CTy[][Tri(k2)];
+			    if(CTz[][Tri(k2)]<zmin)
+				  zmin=CTz[][Tri(k2)];
+			    if(CTz[][Tri(k2)]>zmax)
+				  zmax=CTz[][Tri(k2)];
+			}
+			if((cellX>=xmin)&&(cellX<=xmax)&&(cellY>=ymin)&&(cellY<=ymax)&&(cellZ>=zmin)&&(cellZ<=zmax))
+			{				
+				real x0=CTx[][Tri(0)];
+				real x1=CTx[][Tri(1)];
+				real x2=CTx[][Tri(2)];
+				real x3=CTx[][Tri(3)];
+				real y0=CTy[][Tri(0)];
+				real y1=CTy[][Tri(1)];
+				real y2=CTy[][Tri(2)];
+				real y3=CTy[][Tri(3)];
+				real z0=CTz[][Tri(0)];
+				real z1=CTz[][Tri(1)];
+				real z2=CTz[][Tri(2)];
+				real z3=CTz[][Tri(3)];
+				
+				real edgex1=x0-cellX;
+				real edgex2=x1-cellX;
+				real edgex3=x2-cellX;
+				real edgey1=y0-cellY;
+				real edgey2=y1-cellY;
+				real edgey3=y2-cellY;
+				real edgez1=z0-cellZ;
+				real edgez2=z1-cellZ;
+				real edgez3=z2-cellZ;				
+				real S1=edgex1*edgey2*edgez3+edgex3*edgey1*edgez2+edgex2*edgey3*edgez1-edgex3*edgey2*edgez1-edgex2*edgey1*edgez3-edgex1*edgey3*edgez2;
+				S1=abs(S1)/6;
+				
+				edgex1=x0-cellX;
+				edgex2=x1-cellX;
+				edgex3=x3-cellX;
+				edgey1=y0-cellY;
+				edgey2=y1-cellY;
+				edgey3=y3-cellY;
+				edgez1=z0-cellZ;
+				edgez2=z1-cellZ;
+				edgez3=z3-cellZ;	
+				real S2=edgex1*edgey2*edgez3+edgex3*edgey1*edgez2+edgex2*edgey3*edgez1-edgex3*edgey2*edgez1-edgex2*edgey1*edgez3-edgex1*edgey3*edgez2;
+				S2=abs(S2)/6;
+				
+				edgex1=x0-cellX;
+				edgex2=x2-cellX;
+				edgex3=x3-cellX;
+				edgey1=y0-cellY;
+				edgey2=y2-cellY;
+				edgey3=y3-cellY;
+				edgez1=z0-cellZ;
+				edgez2=z2-cellZ;
+				edgez3=z3-cellZ;	
+				real S3=edgex1*edgey2*edgez3+edgex3*edgey1*edgez2+edgex2*edgey3*edgez1-edgex3*edgey2*edgez1-edgex2*edgey1*edgez3-edgex1*edgey3*edgez2;
+				S3=abs(S3)/6;
+				
+				edgex1=x1-cellX;
+				edgex2=x2-cellX;
+				edgex3=x3-cellX;
+				edgey1=y1-cellY;
+				edgey2=y2-cellY;
+				edgey3=y3-cellY;
+				edgez1=z1-cellZ;
+				edgez2=z2-cellZ;
+				edgez3=z3-cellZ;
+				real S4=edgex1*edgey2*edgez3+edgex3*edgey1*edgez2+edgex2*edgey3*edgez1-edgex3*edgey2*edgez1-edgex2*edgey1*edgez3-edgex1*edgey3*edgez2;
+				S4=abs(S4)/6;
+				
+				edgex1=x1-x0;
+				edgex2=x2-x0;
+				edgex3=x3-x0;
+				edgey1=y1-y0;
+				edgey2=y2-y0;
+				edgey3=y3-y0;
+				edgez1=z1-z0;
+				edgez2=z2-z0;
+				edgez3=z3-z0;
+				real S0=edgex1*edgey2*edgez3+edgex3*edgey1*edgez2+edgex2*edgey3*edgez1-edgex3*edgey2*edgez1-edgex2*edgey1*edgez3-edgex1*edgey3*edgez2;
+				S0=abs(S0)/6;
+                //cout<<S1<<"**"<<S2<<"**"<<S3<<"**"<<S4<<"**"<<S0<<endl;
+				//real S0=CellTh[k];
+                if(S0<0||S1<0||S2<0||S3<0||S4<0)
+				{
+					cout<<"The formula of tetrahedron volume is wrong!"<<endl;
+				}
+				if(abs(S0-S1-S2-S3-S4)<1.0e-15)
+				{
+				   Tindex(i)=k;
+				   break;	
+				}
+			}
+    }			
+}

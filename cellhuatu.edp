@@ -1,0 +1,354 @@
+load "msh3"
+load "Morley"
+load "UMFPACK64"
+load "medit"
+include "cube.idp" 
+include "../Nonlinear-material-structure/MeshFile/MeshFunc3D.edp"
+include "../Nonlinear-material-structure/MeshFile/MeshFunc2D.edp"
+//****************************************************²1.非线性材料参数(start)***********************************
+//参考初始温度
+real intiT=373.15;
+//材料系数与温度呈二次函数增长关系
+//从线性增长关系的Ma、Mb增加到Ma、Mb、Mc,其中Mc为二次关系中的系数
+real Ma1=1.71e-2, Ma2=1.10e-2, Mb1=0.21e-5, Mb2=0.017e-2, Mc1=0.116e-8, Mc2=0.0;                //M:热传导系数
+real Ea1 = 132.2e5, nu1=0.333, Eb1 =-50.3e2, Ec1=-8.1e-1;                         //E,nu杨氏模量和泊松比
+real Ea2 = 122.7e5, nu2=0.289, Eb2 =-5.65e2, Ec2=0.0;  //其中a代表线性增长关系的常数项,b表示线性关系中的一次项系数,c代表二次关系中的二次项系数
+real lambda1 = Ea1*nu1/(1-nu1^2), lambdb1 = Eb1*nu1/(1-nu1^2), lambdc1 = Ec1*nu1/(1-nu1^2); //lambda,mu两个拉梅常数 
+real mua1 = Ea1/(2*(1+nu1)), mub1 = Eb1/(2*(1+nu1)), muc1 = Ec1/(2*(1+nu1));
+real lambda2 = Ea2*nu2/(1-nu2^2), lambdb2 = Eb2*nu2/(1-nu2^2), lambdc2 = Ec2*nu2/(1-nu2^2);
+real mua2 = Ea2/(2*(1+nu2)), mub2 = Eb2/(2*(1+nu2)), muc2 = Ec2/(2*(1+nu2));
+real beta1=527.22, beta2=216.03, betb1=-7.4864e-1, betb2=1.6166e-1, betc1=5.0306e-4, betc2=-0.7821e-4;         //热模量
+real deta1=527.22*intiT, deta2=216.03*intiT, detb1=-7.4864e-1*intiT, detb2=1.6166e-1*intiT, detc1=5.0306e-4*intiT, detc2=-0.7821e-4*intiT;         //双向耦合模量
+real pca1=1.0020, pca2=1.5470, pcb1=2.9073e-3, pcb2=3.8808e-3, pcc1=-2.2637e-6, pcc2=-4.3051e-6;              //pc:两种材料的密度和比热乘积rho*c,热传导方程需要                
+real rho1=3.657e-3, rho2=4.420e-3; 
+//********二次函数材料系数宏*********
+macro material(a,b,c,RET) (a+b*RET+c*RET*RET)//
+//********线性材料系数宏
+//应变宏
+macro strain(u1,u2,u3) [dx(u1),dy(u2),dz(u3),dy(u1)+dx(u2),dz(u2)+dy(u3),dx(u3)+dz(u1)]//
+//各向异性材料柔度矩阵
+macro H(Ee11,Ee22,Ee33,v12,v23,v13,Gg12,Gg23,Gg31)[[1.0/Ee11, (-1.0)*v12/Ee11, (-1.0)*v13/Ee11, 0.0, 0.0, 0.0],
+                                                      [(-1.0)*v12/Ee11, 1.0/Ee22, (-1.0)*v23/Ee22, 0.0, 0.0, 0.0],
+                                                        [(-1.0)*v13/Ee11, (-1.0)*v23/Ee22, 1.0/Ee33, 0.0, 0.0, 0.0],
+					                                       [0.0, 0.0, 0.0, 1.0/Gg12, 0.0, 0.0],
+								                              [0.0, 0.0, 0.0, 0.0, 1.0/Gg23, 0.0],
+                                                                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0/Gg31]]//
+//对于各向同性材料有E=E11=E22=E33,v=Nu12=Nu23=Nu31,G=G12=G23=G31=E/2(1+v);
+macro HH(E,V)[[1.0/E, (-1.0)*V/E, (-1.0)*V/E , 0, 0, 0],
+                                                      [(-1.0)*V/E, 1.0/E ,(-1.0)*V/E, 0.0 ,0.0 ,0.0],
+                                                        [(-1.0)*V/E ,(-1.0)*V/E, 1.0/E ,0.0, 0.0 ,0.0],
+					                                       [0.0, 0.0, 0.0, 2.0*(1+V)/E, 0.0, 0.0],
+								                              [0.0, 0.0, 0.0, 0.0, 2.0*(1+V)/E, 0.0],
+                                                                [0.0, 0.0, 0.0, 0.0, 0.0, 2.0*(1+V)/E]]//
+//刚度矩阵宏
+macro C(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[[kc11,kc12,kc13,0.0,0.0,0.0],
+   [kc21,kc22,kc23,0.0,0.0,0.0],
+       [kc31,kc32,kc33,0.0,0.0,0.0],
+            [0.0,0.0,0.0,kc44,0.0,0.0],
+               [0.0,0.0,0.0,0.0,kc55,0.0],
+                  [0.0,0.0,0.0,0.0,0.0,kc66]]//
+//生成刚度矩阵每一行的宏命令
+//各向异性材料和各向同性材料为相同的宏命令
+macro C1(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[kc11,kc12,kc13,0.0,0.0,0.0]//
+macro C2(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[kc21,kc22,kc23,0.0,0.0,0.0]//
+macro C3(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[kc31,kc32,kc33,0.0,0.0,0.0]//
+macro C4(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[0.0,0.0,0.0,kc44,0.0,0.0]//
+macro C5(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[0.0,0.0,0.0,0.0,kc55,0.0]//
+macro C6(kc11,kc12,kc13,kc21,kc22,kc23,kc31,kc32,kc33,kc44,kc55,kc66)
+[0.0,0.0,0.0,0.0,0.0,kc66]//
+
+/* //应变宏
+macro strain(u1, u2) [dx(u1), dy(u2), dy(u1) + dx(u2)]   //EOM
+//刚度矩阵宏
+macro C(E1,E2,E3,nu,RET) [[material(E1,E2,E3,RET)/(1-nu^2),    material(E1,E2,E3,RET)*nu/(1-nu^2), 0],
+                          [material(E1,E2,E3,RET)*nu/(1-nu^2), material(E1,E2,E3,RET)/(1-nu^2),    0],
+                                         [0,             0,             material(E1,E2,E3,RET)/(2*(1+nu))]] //EOM
+macro Con11(E1,E2,E3,nu,RET) [material(E1,E2,E3,RET)/(1-nu^2), material(E1,E2,E3,RET)*nu/(1-nu^2), 0] //EOM
+macro Con12(E1,E2,E3,nu,RET) [0         , 0            , material(E1,E2,E3,RET)/(2*(1+nu))] //EOM
+macro Con21(E1,E2,E3,nu,RET) [0         , 0            , material(E1,E2,E3,RET)/(2*(1+nu))] //EOM
+macro Con22(E1,E2,E3,nu,RET) [material(E1,E2,E3,RET)*nu/(1-nu^2), material(E1,E2,E3,RET)/(1-nu^2), 0] //EOM */
+/* real[int, int] MMa1 = C(Ea1, Eb1, nu1, intiT);
+cout << "Constitute Matrix M1: " << endl;
+cout << MMa1 << endl;
+real[int, int] MMa2 = C(Ea2, Eb2, nu2, intiT);
+cout << "Constitute Matrix M2: " << endl;
+cout << MMa2 << endl; */
+//2.将柔度矩阵通过矩阵求逆转化为刚度矩阵
+//矩阵求逆函数
+func real[int,int] inverse(real[int,int] &vec)
+{
+	
+	//vec为已生成的柔度矩阵为对称正定矩阵
+    //利用已有算法求逆矩阵
+	int stRank = 6;
+	real[int] b(6);
+	for(int k=0; k<stRank; k++)
+	{
+		real w= vec(0,0);
+		int m = stRank - k -1;
+		for(int i=1; i<stRank; i++)
+		{
+			real g = vec(i,0);
+			b[i] = g / w;
+			if (i<=m)
+			{
+				b(i) = -b(i);
+			}
+			for(int j=1; j<=i; j++)
+			{
+				vec(i-1,j-1)= vec(i,j) + g * b(j);
+			}
+		}
+		vec(stRank-1,stRank-1) = 1.0 / w;
+		for(int i= 1; i<stRank; i++)
+		{
+			vec(stRank-1,i-1) =  b(i);
+		}
+	}
+	for(int i=0; i<stRank-1; i++)
+	{
+		for(int j = i+1; j<stRank; j++)
+		{
+			vec(i,j) = vec(j,i);
+		}
+	}
+
+	real[int,int] cmatrix = vec;
+	return cmatrix;
+}
+//****************************************************²非线性材料参数(end)************************************
+//**************************************随机微观单胞材料等效材料参数计算*********************************************
+int count=1;
+int[int] Step(count);
+real[int] Strength(count);
+string[int] Cstring(count);
+string Cstr=0;
+for(int i = 0; i < count; i++)
+{
+	Cstr=i+1;	
+    //cout<<Cstr<<" "<<Ystr<<endl;
+    Cstring[i]="NCRandFinalSphere"+Cstr+".mesh";
+    cout<<Cstring[i]<<endl;	
+}
+//*******************************************
+//*******************************************
+//****************************************************2.前处理(begin)*************************************
+//include "../cicpnonlinear3/MeshFile/MeshFunc2D.edp"
+//load "lapack"
+//load "fflapack"
+//单胞网格及几何形状定义
+real r=0.35;
+//1.单胞几何模型及网格生成程序段
+//球形夹杂单胞
+//mesh3 platecell=CBall(0.5, 0.5, 0.5, r, 8, 0);//这个单胞划分函数对球的划分很密集
+//mesh3 CellTh= MBall(1, 1, 1, 0.5, 0.5, 0.5, r, 15);//这个单胞函数对球的划分不是很密
+int RM1 = 10;
+int RM2 = 20;
+//2.均匀化区域网格
+int n =5;                  //单胞数目5*5*5 
+real epsilon = 1./n;        //单胞大小
+int[int] NN=[25,25,25];
+real [int,int] BB=[[0,5],[0,5],[0,5]];
+int [int,int] L=[[1,2],[3,4],[5,6]];
+mesh3 HomoTh1=Cube(NN,BB,L);
+mesh3 HomoTh=movemesh3(HomoTh1,transfo=[x*epsilon,y*epsilon,z*epsilon]);
+//HomoTh = movemesh(HomoTh, [0.5*x,y]);
+//HomoTh = movemesh(HomoTh, [x+1, y]);
+//宏观精细有限元网格及几何形状定义
+//mesh MacroTh = MacroMeshRectangle(n, 20, 0.25, 0.25, 0.5, 0.5, 0);
+//1.宏观区域几何模型及网格生成程序段
+//a代表x方向的单胞数，b代表y方向的单胞数，c代表z方向的单胞数
+int a1=5;
+int b1=5;
+int c1=5;
+mesh3 MacroTh1 = MBall(a1, b1, c1, 0.5, 0.5, 0.5, r, 35);
+mesh3 MacroTh=movemesh3(MacroTh1,transfo=[x*epsilon,y*epsilon,z*epsilon]);
+int RMM1 = MacroTh(0.01, 0.01, 0.01).region;
+int RMM2 = MacroTh(0.5, 0.5, 0.5).region;
+//MacroTh = movemesh(MacroTh, [x+1, y]);
+plot(MacroTh);
+mesh3 Exter=trunc(MacroTh,region==RMM1);
+plot(Exter);
+mesh3 Inter=trunc(MacroTh,region==RMM2);
+plot(Inter);
+fespace MacroVh(MacroTh, P1);
+fespace MacroVh0(MacroTh, P0);
+//宏观区域上线性常数部分参数
+MacroVh0 rhoM= rho1*(region==RMM1) + rho2*(region==RMM2);//密度不依赖于温度
+MacroVh0 nuM = nu1*(region==RMM1) + nu2*(region==RMM2);//温度对泊松比影响很小
+MacroVh0 aaM = Ma1*(region==RMM1) + Ma2*(region==RMM2);
+MacroVh0 EaM = Ea1*(region==RMM1) + Ea2*(region==RMM2);
+MacroVh0 baM = beta1*(region==RMM1) + beta2*(region==RMM2);
+MacroVh0 daM = deta1*(region==RMM1) + deta2*(region==RMM2);
+MacroVh0 pcaM= pca1*(region==RMM1) + pca2*(region==RMM2);
+//宏观区域上线性一次项部分参数
+MacroVh0 abM = Mb1*(region==RMM1) + Mb2*(region==RMM2);
+MacroVh0 EbM = Eb1*(region==RMM1) + Eb2*(region==RMM2);
+MacroVh0 bbM = betb1*(region==RMM1) + betb2*(region==RMM2);
+MacroVh0 dbM = detb1*(region==RMM1) + detb2*(region==RMM2);
+MacroVh0 pcbM= pcb1*(region==RMM1) + pcb2*(region==RMM2);
+//宏观区域上非线性二次项部分参数
+MacroVh0 acM = Mc1*(region==RMM1) + Mc2*(region==RMM2);
+MacroVh0 EcM = Ec1*(region==RMM1) + Ec2*(region==RMM2);
+MacroVh0 bcM = betc1*(region==RMM1) + betc2*(region==RMM2);
+MacroVh0 dcM = detc1*(region==RMM1) + detc2*(region==RMM2);
+MacroVh0 pccM= pcc1*(region==RMM1) + pcc2*(region==RMM2);
+
+//宏观问题刚度系数定义
+MacroVh kM11;
+MacroVh kM12;
+MacroVh kM13;
+MacroVh kM21;
+MacroVh kM22;
+MacroVh kM23;
+MacroVh kM31;
+MacroVh kM32;
+MacroVh kM33;
+MacroVh kM44;
+MacroVh kM55;
+MacroVh kM66;
+
+//方程未知函数
+func f=1500;//热源函数
+func f1=0.0;//x方向体力
+func f2=0.0;//y方向体力
+func f3=-25000;//z方向体力
+real dt = 0.002; //时间步长
+
+real Time=1.0;
+//****************************************************前处理(end)*************************************
+
+//*********************************3.精细有限元求解定义(begin)*******************************
+MacroVh FEU,FEV,FEW,FET;           //实变量
+MacroVh v1,v2,v3,vT;              //虚变量
+MacroVh Tp,up1,upp1,up2,upp2,up3,upp3;  //时间方向递推时的中间变量
+MacroVh IFEU,IFEV,IFEW,IFET;        //非线性迭代时的中间变量
+//热传导方程初值问题
+Tp=373.15;
+//IFET=373.15;
+//波动方程初值问题,表示初始位移、速度均为0
+upp1=0.0;
+up1=0.0;
+upp2=0.0;
+up2=0.0;
+upp3=0.0;
+up3=0.0;
+//热力耦合问题的变分问题
+problem DecoupThermo(FET,vT,solver=GMRES,eps=1.0e-10)=
+         int3d(MacroTh)(material(pcaM,pcbM,pccM,IFET)*FET*vT/dt)-int3d(MacroTh)(material(pcaM,pcbM,pccM,IFET)*Tp*vT/dt)		
+		+int3d(MacroTh)(material(aaM,abM,acM,IFET)*dx(FET)*dx(vT)+material(aaM,abM,acM,IFET)*dy(FET)*dy(vT)+material(aaM,abM,acM,IFET)*dz(FET)*dz(vT))		
+		+int3d(MacroTh)(material(daM,dbM,dcM,IFET)*(dx(up1)+dy(up2)+dz(up3))*vT/dt*0.5)
+		-int3d(MacroTh)(material(daM,dbM,dcM,IFET)*(dx(upp1)+dy(upp2)+dz(upp3))*vT/dt*0.5)		
+		-int3d(MacroTh)(f*vT)
+		+on(5,FET=373.15)
+		+on(6,FET=673.15);
+
+problem DecoupMechan([FEU,FEV,FEW],[v1,v2,v3],solver=GMRES,eps=1.0e-10)=
+         int3d(MacroTh)(rhoM*FEU*v1/dt^2.0)-int3d(MacroTh)(2*rhoM*up1*v1/dt^2.0)+int3d(MacroTh)(rhoM*upp1*v1/dt^2.0)
+		+int3d(MacroTh)(rhoM*FEV*v2/dt^2.0)-int3d(MacroTh)(2*rhoM*up2*v2/dt^2.0)+int3d(MacroTh)(rhoM*upp2*v2/dt^2.0)
+		+int3d(MacroTh)(rhoM*FEW*v3/dt^2.0)-int3d(MacroTh)(2*rhoM*up3*v3/dt^2.0)+int3d(MacroTh)(rhoM*upp3*v3/dt^2.0)		
+		+int3d(MacroTh)(strain(FEU,FEV,FEW)'*C(kM11,kM12,kM13,kM21,kM22,kM23,kM31,kM32,kM33,kM44,kM55,kM66)*strain(v1,v2,v3))		
+		-int3d(MacroTh)(material(baM,bbM,bcM,IFET)*(dx(v1)+dy(v2)+dz(v3))*FET)
+        +int3d(MacroTh)(material(baM,bbM,bcM,IFET)*(dx(v1)+dy(v2)+dz(v3))*intiT)	
+		-int3d(MacroTh)(f1*v1+f2*v2+f3*v3)	
+        +on(1,2,3,4, FEU=0, FEV=0, FEW=0);
+//**********************************精细有限元求解定义(end)*******************************
+//(C(EaM, nuM)-C(EbM, nuM)*IFET)
+//**********************************************************************************
+//**********************************************************************************
+//********************利用插值减少计算量开始****************************************
+//由于均匀化材料系数仅依赖于温度故只需要一次插值即可
+/* real Tmin=373.15;
+real Tmax=473.15;
+int kk=200; //每隔0.5度设置一个区间,温度区间划分段数如果精度不够可以继续加细 */
+real Tmin=298.15;//常温25度
+real Tmax=1298.15;
+int kk=500;//每隔0.5度设置一个区间,温度区间划分段数如果精度不够可以继续加细
+real delt=(Tmax-Tmin)/kk;
+//定义保存插值材料系数的数组
+real[int,int] A11(count,kk+1),A22(count,kk+1),A12(count,kk+1),A33(count,kk+1),A23(count,kk+1),A31(count,kk+1);//热传导系数
+real[int,int] C1111(count,kk+1),C1122(count,kk+1),C1133(count,kk+1),C2211(count,kk+1),C2222(count,kk+1),C2233(count,kk+1);
+real[int,int] C3311(count,kk+1),C3322(count,kk+1),C3333(count,kk+1),C1212(count,kk+1),C2323(count,kk+1),C3131(count,kk+1);//刚度系数
+real[int,int] beta11(count,kk+1),beta22(count,kk+1),beta12(count,kk+1),beta33(count,kk+1),beta23(count,kk+1),beta31(count,kk+1);//热模量系数
+real[int,int] deta11(count,kk+1),deta22(count,kk+1),deta12(count,kk+1),deta33(count,kk+1),deta23(count,kk+1),deta31(count,kk+1);//双向耦合模量系数
+real[int,int] HS(count,kk+1);//密度*热容系数
+//插值求解所有一阶单胞函数部分二阶单胞函数
+MacroVh Tx = x;//宏观x坐标
+MacroVh Ty = y;//宏观y坐标
+MacroVh Tz = z;//宏观y坐标
+//CellVh CTx=x;//细观x坐标
+//CellVh CTy=y;//细观y坐标
+//CellVh CTz=z;//细观z坐标
+//int mnode=MacroVh.ndof;//记录精细有限元网格节点数
+//int node=CellVh.ndof;//记录单胞网格节点数
+//int ntriangle=CellTh.nt;
+//CQ2(node,kk+1),CMV11(node,kk+1),CMV12(node,kk+1),CMV22(node,kk+1)
+//real[int,int] CCN1(cnode,kk+1),CCN2(cnode,kk+1),CCu11(cnode,kk+1),CCv11(cnode,kk+1),CCu12(cnode,kk+1),CCv12(cnode,kk+1),CCu22(cnode,kk+1),CCv22(cnode,kk+1),CCub(cnode,kk+1),CCvb(cnode,kk+1);
+//2016年1月5日添加
+//记录单胞网格单元信息即每个四面体的三个顶点编号
+//单胞网格及几何形状定义
+//球形夹杂单胞
+//mesh3 platecell=CBall(0.5, 0.5, 0.5, r, 8, 0);//这个单胞划分函数对球的划分很密集
+mesh3 platecell= MBall(1, 1, 1, 0.5, 0.5, 0.5, r, 20);//这个单胞函数对球的划分不是很密
+//int RM1 = platecell(0.01, 0.01, 0.01).region;
+//int RM2 = platecell(0.5, 0.5, 0.5).region;
+plot(platecell);
+real nv=platecell.nv;
+real nt=platecell.nt;
+cout<<"1:"<<nv<<" "<<nt<<"\n"<<endl;
+int R11 = platecell(0.5, 0.5, 0.5).region;
+int R21 = platecell(0.01, 0.01, 0.01).region;
+
+
+//1.使用截断函数将单胞内部的所有球保留下来
+mesh3 platecellsphere=trunc(platecell,region==R11,label=8);
+plot(platecellsphere,wait=1);
+real nv1=platecellsphere.nv;
+real nt1=platecellsphere.nt;
+//2.将单胞网格转化为tecplot文件
+ofstream is("cellmesh.dat");
+int a,b,c,d;
+is<<"TITLE = tetrahedron_mesh_in_3Dplate"<<endl;
+is<<"VARIABLES = X, Y, Z"<<endl;
+is<<"ZONE N="<<nv1<<",E="<<nt1<<",F=FEPOINT, ET= tetrahedron"<<endl;
+for (int i=0;i<nv1;i++)
+{
+is<<platecellsphere(i).x<<" "<<platecellsphere(i).y<<" "<<platecellsphere(i).z<<endl;
+}
+is<<"\n\n\n\n"<<endl;
+for (int i=0;i<nt1;i++)
+{
+a=platecellsphere[i][0]+1;
+b=platecellsphere[i][1]+1;
+c=platecellsphere[i][2]+1;
+d=platecellsphere[i][3]+1;
+is<<a<<" "<<b<<" "<<c<<" "<<d<<endl;
+}
+
+//3.使用截断函数将单胞内部的所有球保留下来
+nv1=Inter.nv;
+nt1=Inter.nt;
+//4.将单胞网格转化为tecplot文件
+ofstream ism("macromesh.dat");
+ism<<"TITLE = tetrahedron_mesh_in_3Dplate"<<endl;
+ism<<"VARIABLES = X, Y, Z"<<endl;
+ism<<"ZONE N="<<nv1<<",E="<<nt1<<",F=FEPOINT, ET= tetrahedron"<<endl;
+for (int i=0;i<nv1;i++)
+{
+ism<<Inter(i).x<<" "<<Inter(i).y<<" "<<Inter(i).z<<endl;
+}
+ism<<"\n\n\n\n"<<endl;
+for (int i=0;i<nt1;i++)
+{
+a=Inter[i][0]+1;
+b=Inter[i][1]+1;
+c=Inter[i][2]+1;
+d=Inter[i][3]+1;
+ism<<a<<" "<<b<<" "<<c<<" "<<d<<endl;
+}

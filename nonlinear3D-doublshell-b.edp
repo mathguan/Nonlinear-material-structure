@@ -1,0 +1,47 @@
+load "msh3"
+load "Morley"
+load "UMFPACK64"
+load "medit"
+include "cube.idp" 
+include "../Nonlinear-material-structure/MeshFile/MeshFunc3D.edp"
+include "../Nonlinear-material-structure/MeshFile/MeshFunc2D.edp"
+//董灏：2016年9月1日添加
+//********************************************FEstart***************************************
+//********************************************FEstart***************************************
+//1.单胞几何模型及网格生成程序段
+real r=0.35;
+mesh3 platecell= MBall(1, 1, 1, 0.5, 0.5, 0.5, r, 35);//这个单胞函数对球的划分不是很密
+//mesh3 platecell= MCube(1, 1, 1, 0.25, 0.25, 0.25, 0.5, 0.5, 0.5, 10);//这个单胞函数对球的划分不是很密
+savemesh(platecell, "platecell8.mesh");
+plot(platecell,wait=1, value=1,fill=1);
+real nv=platecell.nv;
+real nt=platecell.nt;
+cout<<"1:"<<nv<<" "<<nt<<"\n"<<endl;
+int R11 = platecell(0.5, 0.5, 0.5).region;
+int R21 = platecell(0.01, 0.01, 0.01).region;
+
+
+//1.使用截断函数将单胞内部的所有球保留下来
+mesh3 platecellsphere=trunc(platecell,region==R11,label=8);
+plot(platecellsphere,wait=1);
+real nv1=platecellsphere.nv;
+real nt1=platecellsphere.nt;
+//2.将单胞网格转化为tecplot文件
+ofstream is("cellmesh.dat");
+int a,b,c,d;
+is<<"TITLE = tetrahedron_mesh_in_3Dplate"<<endl;
+is<<"VARIABLES = X, Y, Z"<<endl;
+is<<"ZONE N="<<nv1<<",E="<<nt1<<",F=FEPOINT, ET= tetrahedron"<<endl;
+for (int i=0;i<nv1;i++)
+{
+is<<platecellsphere(i).x<<" "<<platecellsphere(i).y<<" "<<platecellsphere(i).z<<endl;
+}
+is<<"\n\n\n\n"<<endl;
+for (int i=0;i<nt1;i++)
+{
+a=platecellsphere[i][0]+1;
+b=platecellsphere[i][1]+1;
+c=platecellsphere[i][2]+1;
+d=platecellsphere[i][3]+1;
+is<<a<<" "<<b<<" "<<c<<" "<<d<<endl;
+}

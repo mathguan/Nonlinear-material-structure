@@ -1,0 +1,33 @@
+load "msh3"
+load "Morley"
+load "UMFPACK64"
+load "medit"
+include "cube.idp" 
+include "../Nonlinear-material-structure/MeshFile/MeshFunc3D.edp"
+include "../Nonlinear-material-structure/MeshFile/MeshFunc2D.edp"
+//1.宏观区域几何模型及网格生成程序段
+int n=108;
+real epsilon = pi/n;
+//mesh MacroTh = MRectangle(24, 24, 10, 0.25, 0.25, 0.5, 0.5, 0);
+mesh MacroTh = MEllipse(24, 24, 20, 0.5, 0.5, 0.35, 0.35, 0, 0);
+MacroTh=movemesh(MacroTh,[x*epsilon-pi/9,y*epsilon-pi/9]);
+savemesh(MacroTh,"MBall.msh");
+plot(MacroTh,cmm="The Macro domain of plate",wait=1);
+//2.原均匀化网格生成程序无法生成网格，替换为该网格生成函数
+real a1=(-1.0)*pi/9;
+real b1=pi/9;
+real a2=(-1.0)*pi/9;
+real b2=pi/9;
+real a3=(-1.0)*pi/54;
+real b3=pi/54;
+mesh3 HomoTh = Hex(a1, a2, a3, b1, b2, b3, 96, 96, 16);
+savemesh(HomoTh, "Homo8.mesh");
+plot(HomoTh,cmm="The Homo domain of plate",wait=1);
+real nv=MacroTh.nv;
+real nt=MacroTh.nt;
+cout<<"1:"<<nv<<" "<<nt<<"\n"<<endl;
+real hnv=HomoTh.nv;
+real hnt=HomoTh.nt;
+cout<<"2:"<<hnv<<" "<<hnt<<"\n"<<endl;
+//mesh MacroTh1("MBall.msh");
+//plot(MacroTh1);
